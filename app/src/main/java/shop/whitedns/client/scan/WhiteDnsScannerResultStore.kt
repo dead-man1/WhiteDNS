@@ -5,6 +5,7 @@ import android.util.AtomicFile
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import shop.whitedns.client.model.DnsClientEngine
 import shop.whitedns.client.model.ResolverTextValidation
 import shop.whitedns.client.model.validateResolverText
 
@@ -12,17 +13,40 @@ object WhiteDnsScannerResultStore {
     const val ResultFileName = "Scanner result"
     private val ResultFileLock = Any()
 
-    fun resultFile(context: Context): File {
-        return File(resultDirectory(context), ResultFileName)
+    /** Engines write only to their own store; reads span all of them. */
+    private val AllEngines = listOf(DnsClientEngine.StormDns, DnsClientEngine.CottenDns)
+
+    /** The store this engine owns. Only this engine ever writes here. */
+    fun resultFile(context: Context, engine: String): File {
+        return File(resultDirectory(context, engine), ResultFileName)
     }
 
-    fun readValidResolvers(context: Context): List<String> {
-        return readValidResolverSet(context).toList()
+    /**
+     * Every engine's scanned resolvers, this engine's own first.
+     *
+     * Storage stays per engine so each one's results are still its own, but a
+     * resolver another engine already reached is worth trying: both tunnel over
+     * the same resolvers, and validity only really diverges under opt-in DoT/DoH
+     * or unusual query types. Reading only one store also starves an engine's
+     * early-start threshold — StormDNS needs 8 valid resolvers before it
+     * fast-connects, so a half-filled store silently costs Fast Connect.
+     */
+    fun readValidResolvers(context: Context, engine: String): List<String> {
+        return readValidResolverSet(context, engine).toList()
     }
 
-    fun readValidResolverSet(context: Context): Set<String> {
+    fun readValidResolverSet(context: Context, engine: String): Set<String> {
+        val ordered = LinkedHashSet<String>()
+        ordered += readEngineStore(context, engine)
+        AllEngines.filterNot { DnsClientEngine.normalize(it) == DnsClientEngine.normalize(engine) }
+            .forEach { other -> ordered += readEngineStore(context, other) }
+        return ordered
+    }
+
+    /** Just one engine's store, for the write path, which must stay scoped. */
+    private fun readEngineStore(context: Context, engine: String): Set<String> {
         return runCatching {
-            val file = resultFile(context)
+            val file = resultFile(context, engine)
             if (!file.isFile) {
                 emptySet()
             } else {
@@ -33,19 +57,23 @@ object WhiteDnsScannerResultStore {
         }.getOrDefault(emptySet())
     }
 
-    fun mergeValidResolvers(context: Context, resolvers: Iterable<String>): List<String> {
+    /**
+     * Folds newly scanned resolvers into this engine's own store, then returns
+     * the full cross-engine view for display.
+     */
+    fun mergeValidResolvers(context: Context, engine: String, resolvers: Iterable<String>): List<String> {
         val incomingResolvers = normalizeResolverEntries(resolvers)
         if (incomingResolvers.isEmpty()) {
-            return readValidResolvers(context)
+            return readValidResolvers(context, engine)
         }
-        val mergedResolvers = (readValidResolvers(context) + incomingResolvers).distinct()
-        writeValidResolvers(context, mergedResolvers)
-        return mergedResolvers
+        val ownResolvers = (readEngineStore(context, engine).toList() + incomingResolvers).distinct()
+        writeValidResolvers(context, engine, ownResolvers)
+        return readValidResolvers(context, engine)
     }
 
-    fun appendValidResolvers(context: Context, resolvers: Iterable<String>) {
+    fun appendValidResolvers(context: Context, engine: String, resolvers: Iterable<String>) {
         synchronized(ResultFileLock) {
-            val target = resultFile(context)
+            val target = resultFile(context, engine)
             target.parentFile?.mkdirs()
             var wroteResolver = false
             FileOutputStream(target, true).use { stream ->
@@ -214,9 +242,9 @@ object WhiteDnsScannerResultStore {
         return normalizeResolverEntries(listOf(resolver)).firstOrNull()
     }
 
-    private fun writeValidResolvers(context: Context, resolvers: List<String>) {
+    private fun writeValidResolvers(context: Context, engine: String, resolvers: List<String>) {
         synchronized(ResultFileLock) {
-            val target = resultFile(context)
+            val target = resultFile(context, engine)
             target.parentFile?.mkdirs()
             val atomicFile = AtomicFile(target)
             var stream: FileOutputStream? = null
@@ -239,8 +267,13 @@ object WhiteDnsScannerResultStore {
         source.delete()
     }
 
-    private fun resultDirectory(context: Context): File {
-        return File(File(context.noBackupFilesDir, "stormdns"), "scan")
+    /**
+     * Scoped per engine. A resolver validated over CottenDNS (DoH, reshaped
+     * QNAMEs, non-TXT records) is not necessarily reachable over StormDNS's
+     * TXT-over-UDP path, so the two must never read each other's results.
+     */
+    private fun resultDirectory(context: Context, engine: String): File {
+        return File(File(context.noBackupFilesDir, DnsClientEngine.normalize(engine)), "scan")
     }
 
     private fun stripScanResolverPort(resolver: String): String {

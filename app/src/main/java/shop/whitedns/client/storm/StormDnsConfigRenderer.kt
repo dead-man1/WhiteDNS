@@ -1,8 +1,10 @@
 package shop.whitedns.client.storm
 
 import shop.whitedns.client.model.ConnectionProfile
+import shop.whitedns.client.model.CottenDnsProfileSettings
 import shop.whitedns.client.model.DnsClientEngine
 import shop.whitedns.client.model.ResolvedWhiteDnsSettings
+import shop.whitedns.client.model.ServerDomains
 import shop.whitedns.client.model.StormDnsServerProfile
 import shop.whitedns.client.model.WhiteDnsSettings
 import shop.whitedns.client.model.normalizedResolverProfiles
@@ -39,11 +41,15 @@ object StormDnsConfigRenderer {
         val resolved = settings.resolve()
 
         return buildString {
-            appendLine("""DOMAINS = ["${escape(serverProfile.domain)}"]""")
+            appendDomainsToml(serverProfile.domain)
             appendLine("DATA_ENCRYPTION_METHOD = ${serverProfile.encryptionMethod}")
             appendLine("ENCRYPTION_KEY = \"${escape(serverProfile.encryptionKey)}\"")
             appendLine("PROTOCOL_TYPE = \"${escape(resolved.protocolType)}\"")
-            appendEngineSettingsToml(serverProfile.engine)
+            appendEngineSettingsToml(serverProfile.engine, serverProfile.cottenSettings)
+            // The initial pre-connection scan uses the app-wide resolver
+            // parallelism for both engines, so connecting stays fast. Only the
+            // CottenDNS background sweep is tuned per profile, via its own key in
+            // the engine block above.
             appendClientSettingsToml(resolved)
         }.trimEnd()
     }
@@ -57,11 +63,11 @@ object StormDnsConfigRenderer {
             trafficWarmupEnabled = false,
         ).resolve()
         return buildString {
-            appendLine("""DOMAINS = ["${escape(serverProfile.domain)}"]""")
+            appendDomainsToml(serverProfile.domain)
             appendLine("DATA_ENCRYPTION_METHOD = ${serverProfile.encryptionMethod}")
             appendLine("ENCRYPTION_KEY = \"${escape(serverProfile.encryptionKey)}\"")
             appendLine("PROTOCOL_TYPE = \"${escape(resolved.protocolType)}\"")
-            appendEngineSettingsToml(serverProfile.engine)
+            appendEngineSettingsToml(serverProfile.engine, serverProfile.cottenSettings)
             appendClientSettingsToml(
                 resolved = resolved,
                 listenIp = "127.0.0.1",
@@ -84,14 +90,26 @@ object StormDnsConfigRenderer {
         return settings.resolve().resolverEntries.joinToString(separator = "\n")
     }
 
-    private fun StringBuilder.appendEngineSettingsToml(engine: String) {
+    /**
+     * Both engines accept a DOMAINS list, so a profile may carry several routes
+     * as a comma-separated string.
+     */
+    private fun StringBuilder.appendDomainsToml(domain: String) {
+        val domains = ServerDomains.split(domain).joinToString(", ") { "\"${escape(it)}\"" }
+        appendLine("DOMAINS = [$domains]")
+    }
+
+    /** StormDNS rejects these keys, so only CottenDNS profiles get the block. */
+    private fun StringBuilder.appendEngineSettingsToml(
+        engine: String,
+        cottenSettings: CottenDnsProfileSettings,
+    ) {
         if (DnsClientEngine.normalize(engine) != DnsClientEngine.CottenDns) {
             return
         }
-        appendLine("LEGACY_SESSION_ID = false")
-        appendLine("RESOLVER_TRANSPORT = \"auto\"")
-        appendLine("""QUERY_TYPES = ["TXT"]""")
-        appendLine("FAST_CONNECT = true")
+        with(CottenDnsSettingsRenderer) {
+            appendCottenDnsSettingsToml(cottenSettings, ::escape)
+        }
     }
 
     private fun StringBuilder.appendClientSettingsToml(
@@ -219,7 +237,7 @@ object StormDnsConfigRenderer {
     }
 
     private fun ConnectionProfile.toStormDnsServerProfile(): StormDnsServerProfile {
-        val domain = customServerDomain.trim().trimEnd('.')
+        val domain = ServerDomains.normalize(customServerDomain)
         val encryptionKey = customServerEncryptionKey.trim()
         if (domain.isBlank() || encryptionKey.isBlank()) {
             throw IllegalArgumentException("Custom server domain and encryption key are required to export TOML")
@@ -231,6 +249,7 @@ object StormDnsConfigRenderer {
             encryptionKey = encryptionKey,
             encryptionMethod = customServerEncryptionMethod.coerceIn(0, 5),
             engine = DnsClientEngine.normalize(engine),
+            cottenSettings = cottenSettings.normalized(),
         )
     }
 }

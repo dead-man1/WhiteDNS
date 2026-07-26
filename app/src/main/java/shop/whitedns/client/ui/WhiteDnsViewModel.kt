@@ -47,6 +47,7 @@ import shop.whitedns.client.model.ConnectionVerificationStatus
 import shop.whitedns.client.model.DnsClientEngine
 import shop.whitedns.client.model.ResolverProfile
 import shop.whitedns.client.model.ResolverRuntimeState
+import shop.whitedns.client.model.ServerDomains
 import shop.whitedns.client.model.ServerTestResult
 import shop.whitedns.client.model.ServerTestState
 import shop.whitedns.client.model.ServerTestStatus
@@ -1897,13 +1898,17 @@ class WhiteDnsViewModel(
                 .filterNot(validEntries::contains)
             val processed = (validEntries + rejectedEntries).toSet()
             val sessionId = UUID.randomUUID().toString()
+            val scanEngine = DnsClientEngine.normalize(
+                uiState.settings.selectedConnectionProfile().engine,
+            )
             val resolverFile = File(
-                File(File(appContext.noBackupFilesDir, "stormdns/scan"), sessionId).apply { mkdirs() },
+                File(File(appContext.noBackupFilesDir, "$scanEngine/scan"), sessionId).apply { mkdirs() },
                 "resume.resolvers",
             )
             val remainingResolverCount = withContext(Dispatchers.IO) {
                 runCatching {
-                    val excludedResolvers = processed + WhiteDnsScannerResultStore.readValidResolverSet(appContext)
+                    val excludedResolvers = processed +
+                        WhiteDnsScannerResultStore.readValidResolverSet(appContext, scanEngine)
                     File(scanRequest.resolverFilePath).bufferedReader(Charsets.UTF_8).useLines { lines ->
                         WhiteDnsScannerResultStore.writePendingScanResolverFile(
                             lines = lines,
@@ -2338,8 +2343,12 @@ class WhiteDnsViewModel(
         uiState = uiState.copy(scanState = failedState)
     }
 
+    /** Scan scratch files live beside the results for the same engine. */
+    private fun selectedScanEngine(): String =
+        DnsClientEngine.normalize(uiState.settings.selectedConnectionProfile().engine)
+
     private fun importScanResolverFile(uri: Uri, sessionId: String): ImportedScanResolverFile {
-        val scanDir = File(File(appContext.noBackupFilesDir, "stormdns/scan"), sessionId).apply {
+        val scanDir = File(File(appContext.noBackupFilesDir, "${selectedScanEngine()}/scan"), sessionId).apply {
             mkdirs()
         }
         val resolverFile = File(scanDir, "input.resolvers")
@@ -2366,7 +2375,7 @@ class WhiteDnsViewModel(
     }
 
     private fun importDefaultScanResolverFile(sessionId: String): ImportedScanResolverFile {
-        val scanDir = File(File(appContext.noBackupFilesDir, "stormdns/scan"), sessionId).apply {
+        val scanDir = File(File(appContext.noBackupFilesDir, "${selectedScanEngine()}/scan"), sessionId).apply {
             mkdirs()
         }
         val resolverFile = File(scanDir, "default.resolvers")
@@ -2415,7 +2424,11 @@ class WhiteDnsViewModel(
         if (scanState.isRunning) {
             return null
         }
-        val scannerResultText = WhiteDnsScannerResultStore.readValidResolvers(appContext)
+        val scannerResultEngine = DnsClientEngine.normalize(
+            currentSettings.selectedConnectionProfile().engine,
+        )
+        val scannerResultText = WhiteDnsScannerResultStore
+            .readValidResolvers(appContext, scannerResultEngine)
             .joinToString(separator = "\n")
         if (scannerResultText.isBlank() || scannerResultText == lastScannerResultProfileText) {
             return null
@@ -2489,20 +2502,22 @@ class WhiteDnsViewModel(
     }
 
     private fun serverProfileFromConnectionProfile(connectionProfile: ConnectionProfile): StormDnsServerProfile? {
-        val domain = connectionProfile.customServerDomain
-            .trim()
-            .trimEnd('.')
+        val domain = ServerDomains.normalize(connectionProfile.customServerDomain)
         val encryptionKey = connectionProfile.customServerEncryptionKey.trim()
         if (domain.isBlank() || encryptionKey.isBlank()) {
             return null
         }
+        // Identity and label follow the primary route; the full list would read
+        // as "a.example, b.example" in the UI.
+        val primaryDomain = ServerDomains.primary(domain)
         return StormDnsServerProfile(
-            id = connectionProfile.id.ifBlank { domain },
-            label = connectionProfile.name.ifBlank { domain },
+            id = connectionProfile.id.ifBlank { primaryDomain },
+            label = connectionProfile.name.ifBlank { primaryDomain },
             domain = domain,
             encryptionKey = encryptionKey,
             encryptionMethod = connectionProfile.customServerEncryptionMethod.coerceIn(0, 5),
             engine = DnsClientEngine.normalize(connectionProfile.engine),
+            cottenSettings = connectionProfile.cottenSettings,
         )
     }
 

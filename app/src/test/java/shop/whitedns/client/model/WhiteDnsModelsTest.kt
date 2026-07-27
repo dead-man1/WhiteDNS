@@ -819,7 +819,7 @@ class WhiteDnsModelsTest {
     }
 
     @Test
-    fun exportAndImportStormDnsProfileLinkUsesOnlyRequiredProfileFields() {
+    fun exportAndImportCottenDnsProfileLinkUsesOnlyRequiredProfileFields() {
         val resolverProfile = ResolverProfile(
             id = "resolver-main",
             name = "Main Resolvers",
@@ -834,6 +834,7 @@ class WhiteDnsModelsTest {
             customServerEncryptionMethod = 5,
             resolverProfileId = resolverProfile.id,
             connectionMode = "vpn",
+            engine = DnsClientEngine.CottenDns,
         )
         val settings = WhiteDnsSettings(
             selectedConnectionProfileId = connectionProfile.id,
@@ -856,12 +857,12 @@ class WhiteDnsModelsTest {
         )
 
         val link = settings.exportStormDnsProfileLink(connectionProfile)
-        val exportedProfileJson = JSONObject(decodeStormDnsProfilePayload(link)).getJSONObject("profile")
+        val exportedProfileJson = JSONObject(decodeProfileLinkPayload(link)).getJSONObject("profile")
         val exportedServerJson = exportedProfileJson.getJSONObject("server")
         val importedSettings = WhiteDnsSettings().importStormDnsProfileLink(link, nowMillis = 100L)
         val importedProfile = importedSettings.selectedConnectionProfile()
 
-        assertTrue(link.startsWith("stormdns://"))
+        assertTrue(link.startsWith("cottendns://"))
         assertEquals(setOf("name", "server"), exportedProfileJson.keys().asSequence().toSet())
         assertEquals(
             setOf("domain", "encryption_key", "encryption_method"),
@@ -871,6 +872,7 @@ class WhiteDnsModelsTest {
         assertEquals("server.example.com", importedProfile.customServerDomain)
         assertEquals("secret-key", importedProfile.customServerEncryptionKey)
         assertEquals(5, importedProfile.customServerEncryptionMethod)
+        assertEquals(DnsClientEngine.CottenDns, importedProfile.engine)
         assertEquals("", importedProfile.resolverProfileId)
         assertEquals("proxy", importedSettings.connectionMode)
         assertEquals(emptyList<String>(), importedSettings.resolve().resolverEntries)
@@ -909,7 +911,7 @@ class WhiteDnsModelsTest {
         )
 
         val link = settings.exportStormDnsProfileLink(profile = connectionProfile)
-        val profileJson = JSONObject(decodeStormDnsProfilePayload(link)).getJSONObject("profile")
+        val profileJson = JSONObject(decodeProfileLinkPayload(link)).getJSONObject("profile")
         val importedSettings = WhiteDnsSettings().importStormDnsProfileLink(link, nowMillis = 300L)
         val importedProfile = importedSettings.selectedConnectionProfile()
 
@@ -1170,8 +1172,8 @@ class WhiteDnsModelsTest {
         assertEquals(freshState, recovered)
     }
 
-    private fun decodeStormDnsProfilePayload(link: String): String {
-        val payload = link.removePrefix("stormdns://")
+    private fun decodeProfileLinkPayload(link: String): String {
+        val payload = link.substringAfter("://")
         val paddedPayload = payload.padEnd(payload.length + ((4 - payload.length % 4) % 4), '=')
         return Base64.getUrlDecoder().decode(paddedPayload).toString(Charsets.UTF_8)
     }

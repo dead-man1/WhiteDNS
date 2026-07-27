@@ -19,27 +19,18 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ColumnScope
@@ -103,6 +94,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.ReusableContent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -111,20 +103,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.zIndex
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -254,47 +238,66 @@ fun WhiteDnsScreen(
             .fillMaxSize()
             .whiteDnsPageBackground(),
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(WhiteDnsPalette.Surface)
+                .statusBarsPadding(),
+            contentAlignment = Alignment.Center,
+        ) {
+            HeaderCard(
+                themeMode = uiState.settings.themeMode,
+                onThemeModeChange = { onSettingsChange(uiState.settings.copy(themeMode = it)) },
+                languageCode = uiState.settings.languageCode,
+                onLanguageCodeChange = { onSettingsChange(uiState.settings.copy(languageCode = it)) },
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(WhiteDnsPalette.Divider),
+        )
         Box(modifier = Modifier.weight(1f)) {
-            when (selectedTab) {
-                WhiteDnsTab.PROFILES -> ProfilesTabContent(
-                    uiState = uiState,
-                    createRequest = profileCreateRequest,
-                    onCreateRequestConsumed = {
-                        profileCreateRequest = null
-                    },
-                    onServerTestClick = onServerTestClick,
-                    onSettingsChange = onSettingsChange,
-                )
-                WhiteDnsTab.CONNECT -> ConnectTabContent(
-                    uiState = uiState,
-                    onBatteryOptimizationClick = onBatteryOptimizationClick,
-                    onNotificationPermissionClick = onNotificationPermissionClick,
-                    onConnectClick = onConnectClick,
-                    onAddConnectionClick = {
-                        profileCreateRequest = ProfileCreateRequest.CONNECTION
-                        selectedTab = WhiteDnsTab.PROFILES
-                    },
-                    onAddResolverProfileClick = {
-                        profileCreateRequest = ProfileCreateRequest.RESOLVER
-                        selectedTab = WhiteDnsTab.PROFILES
-                    },
-                    onSettingsChange = onSettingsChange,
-                )
-                WhiteDnsTab.SCAN -> ScanTabContent(
-                    uiState = uiState,
-                    onScanFileSelected = onScanFileSelected,
-                    onScanDefaultListSelected = onScanDefaultListSelected,
-                    onScanStartClick = onScanStartClick,
-                    onScanConnectionProfileChange = onScanConnectionProfileChange,
-                    onScanWorkerCountChange = onScanWorkerCountChange,
-                    onScanStopClick = onScanStopClick,
-                    onScanResumeClick = onScanResumeClick,
-                    onSettingsChange = onSettingsChange,
-                )
-                WhiteDnsTab.LOGS -> LogsTabContent(
-                    uiState = uiState,
-                    onSettingsChange = onSettingsChange,
-                )
+            ReusableContent(selectedTab) {
+                when (selectedTab) {
+                    WhiteDnsTab.PROFILES -> ProfilesTabContent(
+                        uiState = uiState,
+                        createRequest = profileCreateRequest,
+                        onCreateRequestConsumed = {
+                            profileCreateRequest = null
+                        },
+                        onServerTestClick = onServerTestClick,
+                        onSettingsChange = onSettingsChange,
+                    )
+                    WhiteDnsTab.CONNECT -> ConnectTabContent(
+                        uiState = uiState,
+                        onBatteryOptimizationClick = onBatteryOptimizationClick,
+                        onNotificationPermissionClick = onNotificationPermissionClick,
+                        onConnectClick = onConnectClick,
+                        onAddConnectionClick = {
+                            profileCreateRequest = ProfileCreateRequest.CONNECTION
+                            selectedTab = WhiteDnsTab.PROFILES
+                        },
+                        onAddResolverProfileClick = {
+                            profileCreateRequest = ProfileCreateRequest.RESOLVER
+                            selectedTab = WhiteDnsTab.PROFILES
+                        },
+                        onSettingsChange = onSettingsChange,
+                    )
+                    WhiteDnsTab.SCAN -> ScanTabContent(
+                        uiState = uiState,
+                        onScanFileSelected = onScanFileSelected,
+                        onScanDefaultListSelected = onScanDefaultListSelected,
+                        onScanStartClick = onScanStartClick,
+                        onScanConnectionProfileChange = onScanConnectionProfileChange,
+                        onScanWorkerCountChange = onScanWorkerCountChange,
+                        onScanStopClick = onScanStopClick,
+                        onScanResumeClick = onScanResumeClick,
+                        onSettingsChange = onSettingsChange,
+                    )
+                    WhiteDnsTab.LOGS -> LogsTabContent(uiState = uiState)
+                }
             }
         }
         BottomNavigationBar(
@@ -335,23 +338,7 @@ private enum class ProfileCreateRequest {
 
 @Composable
 private fun Modifier.whiteDnsPageBackground(): Modifier {
-    val backgroundColor = WhiteDnsPalette.Background
-    val accentColor = WhiteDnsPalette.Accent
-    return drawBehind {
-        drawRect(color = backgroundColor)
-        drawRect(
-            brush = Brush.radialGradient(
-                colors = listOf(
-                    accentColor.copy(alpha = 0.30f),
-                    Color(0xFF245D72).copy(alpha = 0.17f),
-                    Color(0xFF111420).copy(alpha = 0.08f),
-                    Color.Transparent,
-                ),
-                center = Offset(x = size.width, y = 0f),
-                radius = size.maxDimension * 1.08f,
-            ),
-        )
-    }
+    return background(WhiteDnsPalette.Background)
 }
 
 @Composable
@@ -520,28 +507,23 @@ private fun ConnectTabContent(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .statusBarsPadding()
                 .padding(bottom = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            HeaderCard(
-                themeMode = settings.themeMode,
-                onThemeModeChange = { onSettingsChange(settings.copy(themeMode = it)) },
-                languageCode = settings.languageCode,
-                onLanguageCodeChange = { onSettingsChange(settings.copy(languageCode = it)) },
-            )
-
             Column(
                 modifier = Modifier
+                    .widthIn(max = WhiteDnsLayout.contentMaxWidth)
                     .fillMaxWidth()
-                    .widthIn(max = 420.dp)
-                    .padding(horizontal = 20.dp),
+                    .padding(horizontal = WhiteDnsLayout.screenHorizontalPadding),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+            if (showNotificationBanner || showBatteryBanner) {
+                Spacer(modifier = Modifier.height(WhiteDnsSpacing.md))
+            }
             AnimatedVisibility(
                 visible = showNotificationBanner,
-                enter = fadeIn(animationSpec = tween(220)) + expandVertically(animationSpec = tween(220)),
-                exit = fadeOut(animationSpec = tween(160)) + shrinkVertically(animationSpec = tween(160)),
+                enter = fadeIn(animationSpec = tween(220)),
+                exit = fadeOut(animationSpec = tween(160)),
             ) {
                 Column {
                     NotificationPermissionBanner(onClick = onNotificationPermissionClick)
@@ -550,8 +532,8 @@ private fun ConnectTabContent(
             }
             AnimatedVisibility(
                 visible = showBatteryBanner,
-                enter = fadeIn(animationSpec = tween(220)) + expandVertically(animationSpec = tween(220)),
-                exit = fadeOut(animationSpec = tween(160)) + shrinkVertically(animationSpec = tween(160)),
+                enter = fadeIn(animationSpec = tween(220)),
+                exit = fadeOut(animationSpec = tween(160)),
             ) {
                 Column {
                     BatteryOptimizationBanner(
@@ -565,7 +547,7 @@ private fun ConnectTabContent(
             }
             Spacer(
                 modifier = Modifier.height(
-                    if (!showNotificationBanner && !showBatteryBanner) 36.dp else 18.dp,
+                    if (!showNotificationBanner && !showBatteryBanner) WhiteDnsSpacing.md else WhiteDnsSpacing.sm,
                 ),
             )
                 ConnectionModeSegmentedControl(
@@ -580,15 +562,15 @@ private fun ConnectTabContent(
                 )
             AnimatedVisibility(
                 visible = resolvedSettings.connectionMode == "vpn",
-                enter = fadeIn(animationSpec = tween(180)) + expandVertically(animationSpec = tween(180)),
-                exit = fadeOut(animationSpec = tween(140)) + shrinkVertically(animationSpec = tween(140)),
+                enter = fadeIn(animationSpec = tween(180)),
+                exit = fadeOut(animationSpec = tween(140)),
             ) {
                 Column {
                     Spacer(modifier = Modifier.height(WhiteDnsSpacing.inputSpacing))
                     AnimatedVisibility(
                         visible = !settings.fullVpnPerformanceWarningDismissed,
-                        enter = fadeIn(animationSpec = tween(180)) + expandVertically(animationSpec = tween(180)),
-                        exit = fadeOut(animationSpec = tween(140)) + shrinkVertically(animationSpec = tween(140)),
+                        enter = fadeIn(animationSpec = tween(180)),
+                        exit = fadeOut(animationSpec = tween(140)),
                     ) {
                         Column {
                             FullVpnPerformanceWarning(
@@ -625,8 +607,8 @@ private fun ConnectTabContent(
             )
             AnimatedVisibility(
                 visible = resolvedSettings.connectionMode == "proxy" || resolvedSettings.connectionMode == "vpn",
-                enter = fadeIn(animationSpec = tween(180)) + expandVertically(animationSpec = tween(180)),
-                exit = fadeOut(animationSpec = tween(140)) + shrinkVertically(animationSpec = tween(140)),
+                enter = fadeIn(animationSpec = tween(180)),
+                exit = fadeOut(animationSpec = tween(140)),
             ) {
                 Column(
                     modifier = Modifier
@@ -654,8 +636,8 @@ private fun ConnectTabContent(
                     )
                     AnimatedVisibility(
                         visible = settings.autoTuneEnabled,
-                        enter = fadeIn(animationSpec = tween(180)) + expandVertically(animationSpec = tween(180)),
-                        exit = fadeOut(animationSpec = tween(140)) + shrinkVertically(animationSpec = tween(140)),
+                        enter = fadeIn(animationSpec = tween(180)),
+                        exit = fadeOut(animationSpec = tween(140)),
                     ) {
                         ParallelTestSelectionPanel(
                             settings = settings,
@@ -678,14 +660,14 @@ private fun ConnectTabContent(
             }
             AnimatedVisibility(
                 visible = uiState.connectionStatus != ConnectionStatus.CONNECTED,
-                enter = fadeIn(animationSpec = tween(180)) + expandVertically(animationSpec = tween(180)),
-                exit = fadeOut(animationSpec = tween(140)) + shrinkVertically(animationSpec = tween(140)),
+                enter = fadeIn(animationSpec = tween(180)),
+                exit = fadeOut(animationSpec = tween(140)),
             ) {
                 Column {
                     Spacer(modifier = Modifier.height(WhiteDnsSpacing.md))
                     Column(
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         HomeSelectorCard(
                             label = WhiteDnsL10n.sectionConnection,
@@ -731,8 +713,8 @@ private fun ConnectTabContent(
             }
             AnimatedVisibility(
                 visible = uiState.connectionStatus == ConnectionStatus.CONNECTED,
-                enter = fadeIn(animationSpec = tween(180)) + expandVertically(animationSpec = tween(180)),
-                exit = fadeOut(animationSpec = tween(120)) + shrinkVertically(animationSpec = tween(120)),
+                enter = fadeIn(animationSpec = tween(180)),
+                exit = fadeOut(animationSpec = tween(120)),
             ) {
                 Column(modifier = Modifier.padding(top = 12.dp)) {
                     ResolverRuntimeSummary(
@@ -741,7 +723,7 @@ private fun ConnectTabContent(
                         connectionStatus = uiState.connectionStatus,
                     )
                     ConnectionVerificationSummary(
-                        modifier = Modifier.padding(top = 10.dp),
+                        modifier = Modifier.padding(top = 8.dp),
                         verification = uiState.connectionVerification,
                     )
                 }
@@ -750,14 +732,14 @@ private fun ConnectTabContent(
                 visible = showResolverRequiredMessage &&
                     uiState.connectionStatus == ConnectionStatus.DISCONNECTED &&
                     !hasResolvers,
-                enter = fadeIn(animationSpec = tween(160)) + expandVertically(animationSpec = tween(160)),
-                exit = fadeOut(animationSpec = tween(120)) + shrinkVertically(animationSpec = tween(120)),
+                enter = fadeIn(animationSpec = tween(160)),
+                exit = fadeOut(animationSpec = tween(120)),
             ) {
                 Text(
-                    modifier = Modifier.padding(top = 10.dp),
+                    modifier = Modifier.padding(top = 8.dp),
                     text = WhiteDnsL10n.connectNeedResolvers,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 11.sp,
+                        fontSize = 13.sp,
                         color = WhiteDnsPalette.WarningText,
                         fontWeight = FontWeight.Medium,
                     ),
@@ -765,8 +747,8 @@ private fun ConnectTabContent(
             }
             AnimatedVisibility(
                 visible = showInitialSetup,
-                enter = fadeIn(animationSpec = tween(180)) + expandVertically(animationSpec = tween(180)),
-                exit = fadeOut(animationSpec = tween(140)) + shrinkVertically(animationSpec = tween(140)),
+                enter = fadeIn(animationSpec = tween(180)),
+                exit = fadeOut(animationSpec = tween(140)),
             ) {
                 Column {
                     Spacer(modifier = Modifier.height(WhiteDnsSpacing.xl))
@@ -793,8 +775,8 @@ private fun ConnectTabContent(
 
             AnimatedVisibility(
                 visible = uiState.connectionStatus == ConnectionStatus.CONNECTED,
-                enter = fadeIn(animationSpec = tween(220)) + expandVertically(animationSpec = tween(220)),
-                exit = fadeOut(animationSpec = tween(180)) + shrinkVertically(animationSpec = tween(180)),
+                enter = fadeIn(animationSpec = tween(220)),
+                exit = fadeOut(animationSpec = tween(180)),
             ) {
                 LiveSpeedStrip(stats = uiState.connectionStats)
             }
@@ -802,8 +784,8 @@ private fun ConnectTabContent(
             AnimatedVisibility(
                 visible = uiState.connectionStatus == ConnectionStatus.CONNECTED ||
                     uiState.autoTuneTrialResults.isNotEmpty(),
-                enter = fadeIn(animationSpec = tween(260)) + expandVertically(animationSpec = tween(260)),
-                exit = fadeOut(animationSpec = tween(180)) + shrinkVertically(animationSpec = tween(180)),
+                enter = fadeIn(animationSpec = tween(260)),
+                exit = fadeOut(animationSpec = tween(180)),
             ) {
                 Column(
                     modifier = Modifier
@@ -847,9 +829,6 @@ private fun ConnectTabContent(
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.height(WhiteDnsSpacing.sectionSpacing))
-            FooterLink()
         }
         }
 
@@ -1091,7 +1070,7 @@ private fun ParallelTestSelectionPanel(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.control))
                 .semantics {
                     contentDescription = if (expanded) {
                         context.getString(R.string.cd_parallel_test_collapse)
@@ -1110,7 +1089,7 @@ private fun ParallelTestSelectionPanel(
             Text(
                 text = "${WhiteDnsL10n.connectSelectedCount} ${selectedIds.size}/${WhiteDnsParallelTest.MaxSelectedConfigs}",
                 style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     color = WhiteDnsPalette.FieldLabel,
                     fontWeight = FontWeight.SemiBold,
                 ),
@@ -1119,17 +1098,16 @@ private fun ParallelTestSelectionPanel(
                 modifier = Modifier
                     .clip(RoundedCornerShape(999.dp))
                     .background(if (expanded) WhiteDnsPalette.Accent else WhiteDnsPalette.SurfaceAlt)
-                    .padding(start = 10.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
+                    .padding(start = 8.dp, end = 8.dp, top = 8.dp, bottom = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
                 Text(
                     text = if (expanded) WhiteDnsL10n.parallelTestOpenLabel else WhiteDnsL10n.parallelTestClosedLabel,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 9.sp,
+                        fontSize = 12.sp,
                         color = if (expanded) WhiteDnsPalette.OnAccent else WhiteDnsPalette.Muted,
                         fontWeight = FontWeight.Medium,
-                        letterSpacing = 0.8.sp,
                     ),
                 )
                 Icon(
@@ -1148,8 +1126,8 @@ private fun ParallelTestSelectionPanel(
         }
         AnimatedVisibility(
             visible = expanded,
-            enter = fadeIn(animationSpec = tween(180)) + expandVertically(animationSpec = tween(180)),
-            exit = fadeOut(animationSpec = tween(140)) + shrinkVertically(animationSpec = tween(140)),
+            enter = fadeIn(animationSpec = tween(180)),
+            exit = fadeOut(animationSpec = tween(140)),
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -1158,7 +1136,7 @@ private fun ParallelTestSelectionPanel(
                 Text(
                     text = WhiteDnsL10n.parallelTestDescription,
                     style = MaterialTheme.typography.bodySmall.copy(
-                        fontSize = 11.sp,
+                        fontSize = 13.sp,
                         color = WhiteDnsPalette.Muted,
                         lineHeight = 16.sp,
                     ),
@@ -1208,7 +1186,7 @@ private fun ParallelTestSelectionPanel(
                         modifier = Modifier.padding(top = WhiteDnsSpacing.xs),
                         text = WhiteDnsL10n.parallelTestYourConfigs,
                         style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 10.sp,
+                            fontSize = 12.sp,
                             color = WhiteDnsPalette.FieldLabel,
                             fontWeight = FontWeight.SemiBold,
                         ),
@@ -1262,7 +1240,7 @@ private fun ParallelTestConfigRow(
                 role = Role.Checkbox,
                 onValueChange = { onToggle() },
             )
-            .padding(vertical = 7.dp, horizontal = 4.dp),
+            .padding(vertical = 8.dp, horizontal = 4.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -1295,9 +1273,9 @@ private fun ParallelTestConfigRow(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodySmall.copy(
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     color = WhiteDnsPalette.Muted.copy(alpha = contentAlpha),
-                    lineHeight = 14.sp,
+                    lineHeight = 18.sp,
                 ),
             )
         }
@@ -1337,21 +1315,15 @@ private fun ProfilesTabContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .statusBarsPadding()
             .padding(bottom = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        HeaderCard(
-            themeMode = uiState.settings.themeMode,
-            onThemeModeChange = { onSettingsChange(uiState.settings.copy(themeMode = it)) },
-            languageCode = uiState.settings.languageCode,
-            onLanguageCodeChange = { onSettingsChange(uiState.settings.copy(languageCode = it)) },
-        )
         Column(
             modifier = Modifier
+                .widthIn(max = WhiteDnsLayout.contentMaxWidth)
                 .fillMaxWidth()
-                .widthIn(max = 420.dp)
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = WhiteDnsLayout.screenHorizontalPadding)
+                .padding(top = WhiteDnsSpacing.sm),
         ) {
             ProfileTabSwitch(
                 selectedTab = selectedProfileTab,
@@ -1360,9 +1332,9 @@ private fun ProfilesTabContent(
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.md))
             InfoCard(
                 title = when (selectedProfileTab) {
-                    ProfileTab.CONNECTION -> WhiteDnsL10n.selectorConnectionProfiles.uppercase()
-                    ProfileTab.RESOLVER -> WhiteDnsL10n.selectorResolverProfiles.uppercase()
-                    ProfileTab.SETTING -> WhiteDnsL10n.selectorSettingProfiles.uppercase()
+                    ProfileTab.CONNECTION -> WhiteDnsL10n.selectorConnectionProfiles
+                    ProfileTab.RESOLVER -> WhiteDnsL10n.selectorResolverProfiles
+                    ProfileTab.SETTING -> WhiteDnsL10n.selectorSettingProfiles
                 },
                 titleAction = if (selectedProfileTab == ProfileTab.SETTING) {
                     {
@@ -1398,7 +1370,6 @@ private fun ProfilesTabContent(
                 }
             }
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.sectionSpacing))
-            FooterLink()
         }
     }
 
@@ -1437,10 +1408,10 @@ private fun SettingProfileGuideButton(
     val haptic = rememberHapticFeedback()
     Box(
         modifier = Modifier
-            .size(36.dp)
+            .size(WhiteDnsLayout.minimumTouchTarget)
             .clip(CircleShape)
             .background(WhiteDnsPalette.AccentSurface)
-            .border(1.5.dp, WhiteDnsPalette.Accent.copy(alpha = 0.26f), CircleShape)
+            .border(1.dp, WhiteDnsPalette.Accent.copy(alpha = 0.26f), CircleShape)
             .clickable(role = Role.Button) {
                 haptic.performLight()
                 onClick()
@@ -1464,10 +1435,10 @@ private fun SettingProfileGuideDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.dialog))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(22.dp))
-                .padding(18.dp),
+                .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.dialog))
+                .padding(16.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -1483,7 +1454,6 @@ private fun SettingProfileGuideDialog(
                         fontSize = 14.sp,
                         color = WhiteDnsPalette.Ink,
                         fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.1.sp,
                     ),
                 )
                 ProfileIconButton(
@@ -1498,7 +1468,7 @@ private fun SettingProfileGuideDialog(
             Text(
                 text = WhiteDnsL10n.settingGuideIntro,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 11.sp,
+                    fontSize = 13.sp,
                     lineHeight = 16.sp,
                     color = WhiteDnsPalette.Description,
                 ),
@@ -1507,7 +1477,7 @@ private fun SettingProfileGuideDialog(
             Text(
                 text = WhiteDnsL10n.settingGuideSource,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 9.sp,
+                    fontSize = 12.sp,
                     lineHeight = 13.sp,
                     color = WhiteDnsPalette.Pale,
                 ),
@@ -1535,12 +1505,11 @@ private fun SettingsGuideSectionView(
     section: SettingsGuideSection,
 ) {
     Text(
-        text = section.title.uppercase(),
+        text = section.title,
         style = MaterialTheme.typography.bodyMedium.copy(
             fontSize = 12.sp,
             color = WhiteDnsPalette.SectionTitle,
             fontWeight = FontWeight.Bold,
-            letterSpacing = 1.2.sp,
         ),
     )
     Spacer(modifier = Modifier.height(WhiteDnsSpacing.sm))
@@ -1559,16 +1528,16 @@ private fun SettingsGuideEntryView(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(WhiteDnsRadii.control))
             .background(WhiteDnsPalette.SurfaceAlt)
-            .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(10.dp))
-            .padding(horizontal = 10.dp, vertical = 9.dp),
+            .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.control))
+            .padding(horizontal = 8.dp, vertical = 8.dp),
     ) {
         Text(
             text = entry.title,
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 11.sp,
-                lineHeight = 15.sp,
+                fontSize = 13.sp,
+                lineHeight = 19.sp,
                 color = WhiteDnsPalette.Ink,
                 fontWeight = FontWeight.Bold,
             ),
@@ -1577,8 +1546,8 @@ private fun SettingsGuideEntryView(
         Text(
             text = entry.body,
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 10.sp,
-                lineHeight = 15.sp,
+                fontSize = 12.sp,
+                lineHeight = 19.sp,
                 color = WhiteDnsPalette.Description,
             ),
         )
@@ -1586,8 +1555,8 @@ private fun SettingsGuideEntryView(
         Text(
             text = "${WhiteDnsL10n.settingGuideEffectLabel}: ${entry.effect}",
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 10.sp,
-                lineHeight = 15.sp,
+                fontSize = 12.sp,
+                lineHeight = 19.sp,
                 color = WhiteDnsPalette.AccentText,
                 fontWeight = FontWeight.Medium,
             ),
@@ -1598,31 +1567,22 @@ private fun SettingsGuideEntryView(
 @Composable
 private fun LogsTabContent(
     uiState: WhiteDnsUiState,
-    onSettingsChange: (WhiteDnsSettings) -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .statusBarsPadding()
             .padding(bottom = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        HeaderCard(
-            themeMode = uiState.settings.themeMode,
-            onThemeModeChange = { onSettingsChange(uiState.settings.copy(themeMode = it)) },
-            languageCode = uiState.settings.languageCode,
-            onLanguageCodeChange = { onSettingsChange(uiState.settings.copy(languageCode = it)) },
-        )
         Column(
             modifier = Modifier
+                .widthIn(max = WhiteDnsLayout.contentMaxWidth)
                 .fillMaxWidth()
-                .widthIn(max = 420.dp)
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = WhiteDnsLayout.screenHorizontalPadding)
+                .padding(top = WhiteDnsSpacing.sm),
         ) {
             ConnectionLogsBlock(uiState = uiState, expanded = true)
-            Spacer(modifier = Modifier.height(WhiteDnsSpacing.sectionSpacing))
-            FooterLink()
         }
     }
 }
@@ -1678,22 +1638,15 @@ private fun ScanTabContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .statusBarsPadding()
             .padding(bottom = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        HeaderCard(
-            themeMode = uiState.settings.themeMode,
-            onThemeModeChange = { onSettingsChange(uiState.settings.copy(themeMode = it)) },
-            languageCode = uiState.settings.languageCode,
-            onLanguageCodeChange = { onSettingsChange(uiState.settings.copy(languageCode = it)) },
-        )
         Column(
             modifier = Modifier
+                .widthIn(max = WhiteDnsLayout.contentMaxWidth)
                 .fillMaxWidth()
-                .widthIn(max = 420.dp)
-                .padding(horizontal = 20.dp)
-                .padding(top = 36.dp),
+                .padding(horizontal = WhiteDnsLayout.screenHorizontalPadding)
+                .padding(top = WhiteDnsSpacing.sm),
             verticalArrangement = Arrangement.spacedBy(WhiteDnsSpacing.md),
         ) {
             Row(
@@ -1739,27 +1692,18 @@ private fun ScanTabContent(
                     text = "${selectedScanConnectionProfile.name.ifBlank { scanProfileFallback }} $needsServerSuffix",
                 )
             }
-            Row(
+            CompactActionButton(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                CompactActionButton(
-                    modifier = Modifier.weight(1f),
-                    label = WhiteDnsL10n.scanBtnStart,
-                    emphasized = true,
-                    tone = CompactActionTone.Success,
-                    enabled = scanCanStart(scanState) && !selectedScanProfileNeedsServer,
-                    onClick = onScanStartClick,
-                )
-                CompactActionButton(
-                    modifier = Modifier.weight(1f),
-                    label = WhiteDnsL10n.scanBtnStop,
-                    emphasized = false,
-                    tone = CompactActionTone.Danger,
-                    enabled = scanState.isRunning,
-                    onClick = onScanStopClick,
-                )
-            }
+                label = if (scanState.isRunning) WhiteDnsL10n.scanBtnStop else WhiteDnsL10n.scanBtnStart,
+                emphasized = true,
+                tone = if (scanState.isRunning) CompactActionTone.Danger else CompactActionTone.Success,
+                enabled = if (scanState.isRunning) {
+                    true
+                } else {
+                    scanCanStart(scanState) && !selectedScanProfileNeedsServer
+                },
+                onClick = if (scanState.isRunning) onScanStopClick else onScanStartClick,
+            )
             if (showScanInfoNotice) {
                 ScanInfoNotice(
                     text = WhiteDnsL10n.scanAutoSave,
@@ -1896,11 +1840,11 @@ private fun ScanInfoNotice(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(WhiteDnsRadii.card))
             .background(WhiteDnsPalette.AccentSurface)
-            .border(1.5.dp, WhiteDnsPalette.Accent.copy(alpha = 0.22f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+            .border(1.dp, WhiteDnsPalette.Accent.copy(alpha = 0.22f), RoundedCornerShape(WhiteDnsRadii.card))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Top,
     ) {
         Box(
@@ -1921,18 +1865,17 @@ private fun ScanInfoNotice(
             Text(
                 text = WhiteDnsL10n.scanAutoSaveTitle,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 9.sp,
+                    fontSize = 12.sp,
                     color = WhiteDnsPalette.AccentText,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.9.sp,
                 ),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.xs))
             Text(
                 text = text,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 10.sp,
-                    lineHeight = 14.sp,
+                    fontSize = 12.sp,
+                    lineHeight = 18.sp,
                     color = WhiteDnsPalette.AccentText,
                     fontWeight = FontWeight.Medium,
                 ),
@@ -1940,7 +1883,7 @@ private fun ScanInfoNotice(
         }
         Box(
             modifier = Modifier
-                .size(28.dp)
+                .size(WhiteDnsLayout.minimumTouchTarget)
                 .clip(CircleShape)
                 .clickable(role = Role.Button) {
                     haptic.performLight()
@@ -1975,10 +1918,10 @@ private fun ScanSaveAsProfileDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.dialog))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(22.dp))
-                .padding(18.dp),
+                .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.dialog))
+                .padding(16.dp),
         ) {
             Text(
                 text = WhiteDnsL10n.scanSaveAsTitle,
@@ -1986,14 +1929,13 @@ private fun ScanSaveAsProfileDialog(
                     fontSize = 14.sp,
                     color = WhiteDnsPalette.Ink,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.1.sp,
                 ),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.md))
             Text(
                 text = "$resolverCount · $scanLabel · $saveBodyTemplate",
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 11.sp,
+                    fontSize = 13.sp,
                     lineHeight = 16.sp,
                     color = WhiteDnsPalette.Muted,
                 ),
@@ -2134,7 +2076,7 @@ private fun MtuParallelismSlider(
         Text(
             text = WhiteDnsL10n.settingResolverParallelNote,
             style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 11.sp,
+                fontSize = 13.sp,
                 lineHeight = 16.sp,
                 color = WhiteDnsPalette.Muted,
             ),
@@ -2180,7 +2122,7 @@ private fun ScanNote(text: String) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(WhiteDnsPalette.Input)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -2209,7 +2151,7 @@ private fun ScanWarningBanner(text: String) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(WhiteDnsPalette.WarningSurface)
-            .border(1.5.dp, WhiteDnsPalette.Warning.copy(alpha = 0.26f), RoundedCornerShape(12.dp))
+            .border(1.dp, WhiteDnsPalette.Warning.copy(alpha = 0.26f), RoundedCornerShape(12.dp))
             .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -2253,15 +2195,20 @@ private fun BottomNavigationBar(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(WhiteDnsPalette.SurfaceAlt)
+            .background(WhiteDnsPalette.Surface)
             .navigationBarsPadding(),
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(WhiteDnsPalette.Divider),
+        )
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.5.dp, WhiteDnsPalette.Border)
-                .padding(horizontal = 14.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                .padding(horizontal = WhiteDnsSpacing.sm, vertical = WhiteDnsSpacing.xs),
+            horizontalArrangement = Arrangement.spacedBy(WhiteDnsSpacing.xs),
         ) {
             WhiteDnsTab.entries.forEach { tab ->
                 val selected = selectedTab == tab
@@ -2272,14 +2219,15 @@ private fun BottomNavigationBar(
                     label = "bottomNavBackground",
                 )
                 val color by animateColorAsState(
-                    targetValue = if (selected) WhiteDnsPalette.AccentText else WhiteDnsPalette.Disabled,
+                    targetValue = if (selected) WhiteDnsPalette.AccentText else WhiteDnsPalette.Muted,
                     animationSpec = tween(180),
                     label = "bottomNavColor",
                 )
                 Column(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(14.dp))
+                        .heightIn(min = WhiteDnsLayout.navigationItemHeight)
+                        .clip(RoundedCornerShape(WhiteDnsRadii.control))
                         .background(background)
                         .selectable(
                             selected = selected,
@@ -2290,7 +2238,7 @@ private fun BottomNavigationBar(
                             },
                         )
                         .semantics(mergeDescendants = true) {}
-                        .padding(vertical = 8.dp),
+                        .padding(vertical = WhiteDnsSpacing.xs),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
@@ -2303,10 +2251,9 @@ private fun BottomNavigationBar(
                     Text(
                         text = localizedLabel,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 9.sp,
+                            fontSize = 12.sp,
                             color = color,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                            letterSpacing = 0.5.sp,
                         ),
                     )
                 }
@@ -2325,9 +2272,8 @@ private fun ProfileTabSwitch(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(WhiteDnsPalette.Surface)
-            .border(1.5.dp, WhiteDnsPalette.ControlBorder, RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(WhiteDnsRadii.card))
+            .background(WhiteDnsPalette.SurfaceAlt)
             .padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -2337,10 +2283,11 @@ private fun ProfileTabSwitch(
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(10.dp))
+                    .heightIn(min = WhiteDnsLayout.controlHeight)
+                    .clip(RoundedCornerShape(WhiteDnsRadii.control))
                     .background(
                         if (selected) {
-                            WhiteDnsPalette.Accent
+                            WhiteDnsPalette.Surface
                         } else {
                             Color.Transparent
                         },
@@ -2354,7 +2301,7 @@ private fun ProfileTabSwitch(
                         },
                     )
                     .semantics(mergeDescendants = true) {}
-                    .padding(horizontal = 8.dp, vertical = 11.dp),
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -2362,48 +2309,13 @@ private fun ProfileTabSwitch(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 9.sp,
-                        color = if (selected) WhiteDnsPalette.OnAccent else WhiteDnsPalette.Muted,
+                        fontSize = 12.sp,
+                        color = if (selected) WhiteDnsPalette.AccentText else WhiteDnsPalette.Muted,
                         fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                        letterSpacing = 0.4.sp,
                     ),
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun FooterLink() {
-    val context = LocalContext.current
-    val haptic = rememberHapticFeedback()
-
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = WhiteDnsL10n.footerPoweredBy,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 10.sp,
-                color = WhiteDnsPalette.Description,
-            ),
-        )
-        Spacer(modifier = Modifier.height(WhiteDnsSpacing.xs))
-        Text(
-            text = WhiteDnsTelegramUrl,
-            modifier = Modifier
-                .clip(RoundedCornerShape(6.dp))
-                .semantics {
-                    contentDescription = context.getString(R.string.cd_telegram_link)
-                }
-                .clickable(role = Role.Button) {
-                    haptic.performLight()
-                    openWhiteDnsTelegram(context)
-                }
-                .padding(horizontal = 8.dp, vertical = 3.dp),
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 9.sp,
-                color = WhiteDnsPalette.AccentText,
-            ),
-        )
     }
 }
 
@@ -2427,9 +2339,9 @@ private fun ConnectionModeSegmentedControl(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
                 .background(if (enabled) WhiteDnsPalette.Surface else WhiteDnsPalette.SurfaceAlt)
-                .border(1.5.dp, WhiteDnsPalette.ControlBorder, RoundedCornerShape(12.dp))
-                .padding(3.dp),
-            horizontalArrangement = Arrangement.spacedBy(3.dp),
+                .border(1.dp, WhiteDnsPalette.ControlBorder, RoundedCornerShape(12.dp))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             modeOptions.forEach { (modeValue, modeLabel) ->
                 val selected = selectedMode == modeValue
@@ -2455,6 +2367,7 @@ private fun ConnectionModeSegmentedControl(
                 Box(
                     modifier = Modifier
                         .weight(1f)
+                        .heightIn(min = WhiteDnsLayout.controlHeight)
                         .clip(RoundedCornerShape(9.dp))
                         .background(background)
                         .selectable(
@@ -2467,7 +2380,7 @@ private fun ConnectionModeSegmentedControl(
                             },
                         )
                         .semantics(mergeDescendants = true) {}
-                        .padding(horizontal = 6.dp, vertical = 10.dp),
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -2475,10 +2388,9 @@ private fun ConnectionModeSegmentedControl(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 10.sp,
+                            fontSize = 12.sp,
                             color = textColor,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                            letterSpacing = 0.4.sp,
                         ),
                     )
                 }
@@ -2507,9 +2419,9 @@ private fun ThemeModeSegmentedControl(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.ControlBorder, RoundedCornerShape(12.dp))
-                .padding(3.dp),
-            horizontalArrangement = Arrangement.spacedBy(3.dp),
+                .border(1.dp, WhiteDnsPalette.ControlBorder, RoundedCornerShape(12.dp))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             themeOptions.forEach { (modeValue, modeLabel) ->
                 val selected = selectedMode == modeValue
@@ -2526,6 +2438,7 @@ private fun ThemeModeSegmentedControl(
                 Box(
                     modifier = Modifier
                         .weight(1f)
+                        .heightIn(min = WhiteDnsLayout.controlHeight)
                         .clip(RoundedCornerShape(9.dp))
                         .background(background)
                         .selectable(
@@ -2537,7 +2450,7 @@ private fun ThemeModeSegmentedControl(
                             },
                         )
                         .semantics(mergeDescendants = true) {}
-                        .padding(horizontal = 6.dp, vertical = 9.dp),
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -2545,10 +2458,9 @@ private fun ThemeModeSegmentedControl(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 10.sp,
+                            fontSize = 12.sp,
                             color = textColor,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                            letterSpacing = 0.4.sp,
                         ),
                     )
                 }
@@ -2601,12 +2513,12 @@ private fun HomeSelectorCard(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
                 .background(if (enabled) WhiteDnsPalette.Surface else WhiteDnsPalette.SurfaceAlt)
-                .border(1.5.dp, borderColor, RoundedCornerShape(12.dp))
+                .border(1.dp, borderColor, RoundedCornerShape(12.dp))
                 .clickable(enabled = enabled, role = Role.Button) {
                     haptic.performLight()
                     onClick()
                 }
-                .padding(horizontal = 11.dp, vertical = 10.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -2627,7 +2539,7 @@ private fun HomeSelectorCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 10.sp,
+                        fontSize = 12.sp,
                         color = detailColor,
                         fontWeight = FontWeight.Medium,
                     ),
@@ -2703,10 +2615,10 @@ private fun AdvancedSettingsImportDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.dialog))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(22.dp))
-                .padding(18.dp),
+                .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.dialog))
+                .padding(16.dp),
         ) {
             Text(
                 text = WhiteDnsL10n.profileDialogImportSettings,
@@ -2714,7 +2626,6 @@ private fun AdvancedSettingsImportDialog(
                     fontSize = 14.sp,
                     color = WhiteDnsPalette.Ink,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.1.sp,
                 ),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.md))
@@ -2768,7 +2679,7 @@ private fun AdvancedSettingsImportDialog(
                 Text(
                     text = message,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 10.sp,
+                        fontSize = 12.sp,
                         color = WhiteDnsPalette.Error,
                     ),
                 )
@@ -2854,8 +2765,8 @@ private fun AdvancedSettingsFields(
         )
         AnimatedVisibility(
             visible = settings.httpProxyEnabled,
-            enter = fadeIn(animationSpec = tween(220)) + expandVertically(animationSpec = tween(220)),
-            exit = fadeOut(animationSpec = tween(160)) + shrinkVertically(animationSpec = tween(160)),
+            enter = fadeIn(animationSpec = tween(220)),
+            exit = fadeOut(animationSpec = tween(160)),
         ) {
             WhiteDnsTextField(
                 label = WhiteDnsL10n.settingHttpPort,
@@ -2879,8 +2790,8 @@ private fun AdvancedSettingsFields(
 
         AnimatedVisibility(
             visible = settings.socks5Authentication,
-            enter = fadeIn(animationSpec = tween(220)) + expandVertically(animationSpec = tween(220)),
-            exit = fadeOut(animationSpec = tween(160)) + shrinkVertically(animationSpec = tween(160)),
+            enter = fadeIn(animationSpec = tween(220)),
+            exit = fadeOut(animationSpec = tween(160)),
         ) {
             Column {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -2990,8 +2901,8 @@ private fun AdvancedSettingsFields(
     )
     AnimatedVisibility(
         visible = settings.trafficWarmupEnabled,
-        enter = fadeIn(animationSpec = tween(220)) + expandVertically(animationSpec = tween(220)),
-        exit = fadeOut(animationSpec = tween(160)) + shrinkVertically(animationSpec = tween(160)),
+        enter = fadeIn(animationSpec = tween(220)),
+        exit = fadeOut(animationSpec = tween(160)),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             WhiteDnsTextField(
@@ -3093,17 +3004,17 @@ private fun HomeSelectorSheet(
                 .fillMaxSize()
                 .whiteDnsPageBackground()
                 .statusBarsPadding()
-                .padding(horizontal = 20.dp, vertical = 22.dp),
+                .padding(horizontal = 20.dp, vertical = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 420.dp),
+                    .widthIn(max = WhiteDnsLayout.contentMaxWidth)
+                    .fillMaxWidth(),
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     ProfileIconButton(
@@ -3142,7 +3053,7 @@ private fun HomeSelectorSheet(
                         Text(
                             text = emptyMessage,
                             style = MaterialTheme.typography.bodyMedium.copy(
-                                fontSize = 11.sp,
+                                fontSize = 13.sp,
                                 color = WhiteDnsPalette.Muted,
                             ),
                         )
@@ -3187,8 +3098,8 @@ private fun HomeSelectorSheetRow(
                 haptic.performLight()
                 onClick()
             }
-            .padding(horizontal = 12.dp, vertical = 11.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
@@ -3208,7 +3119,7 @@ private fun HomeSelectorSheetRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     color = if (selected) WhiteDnsPalette.AccentText else WhiteDnsPalette.Muted,
                     fontWeight = FontWeight.Medium,
                 ),
@@ -3275,7 +3186,7 @@ private fun ConnectionSetupCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(1.5.dp)
+                .height(1.dp)
                 .background(WhiteDnsPalette.Divider),
         )
         SetupInfoRow(
@@ -3323,8 +3234,8 @@ private fun SetupInfoRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 9.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -3332,7 +3243,7 @@ private fun SetupInfoRow(
                 .size(30.dp)
                 .clip(RoundedCornerShape(9.dp))
                 .background(color.copy(alpha = 0.14f))
-                .border(1.5.dp, color.copy(alpha = 0.22f), RoundedCornerShape(9.dp)),
+                .border(1.dp, color.copy(alpha = 0.22f), RoundedCornerShape(9.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -3348,7 +3259,7 @@ private fun SetupInfoRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 9.sp,
+                    fontSize = 12.sp,
                     color = WhiteDnsPalette.Muted,
                     fontWeight = FontWeight.Bold,
                 ),
@@ -3370,7 +3281,7 @@ private fun SetupInfoRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     color = color,
                     fontWeight = FontWeight.Medium,
                 ),
@@ -3416,13 +3327,13 @@ private fun SetupActionButton(
             .fillMaxWidth()
             .clip(RoundedCornerShape(11.dp))
             .background(background)
-            .border(1.5.dp, border, RoundedCornerShape(11.dp))
+            .border(1.dp, border, RoundedCornerShape(11.dp))
             .clickable(enabled = enabled, role = Role.Button) {
                 haptic.performMedium()
                 onClick()
             }
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -3447,7 +3358,7 @@ private fun SetupActionButton(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     color = secondary,
                     fontWeight = FontWeight.Medium,
                 ),
@@ -3477,13 +3388,24 @@ private fun ProfileTopActionGrid(actions: List<ProfileTopAction>) {
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(WhiteDnsSpacing.sm),
     ) {
-        actions.chunked(2).forEach { rowActions ->
+        actions.firstOrNull()?.let { primaryAction ->
+            ResolverActionButton(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = WhiteDnsLayout.controlHeight),
+                label = primaryAction.label,
+                emphasized = primaryAction.emphasized,
+                enabled = primaryAction.enabled,
+                onClick = primaryAction.onClick,
+            )
+        }
+        actions.drop(1).chunked(2).forEach { rowActions ->
             if (rowActions.size == 1) {
                 val action = rowActions.first()
                 ResolverActionButton(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 44.dp),
+                        .heightIn(min = WhiteDnsLayout.controlHeight),
                     label = action.label,
                     emphasized = action.emphasized,
                     enabled = action.enabled,
@@ -3498,7 +3420,7 @@ private fun ProfileTopActionGrid(actions: List<ProfileTopAction>) {
                         ResolverActionButton(
                             modifier = Modifier
                                 .weight(1f)
-                                .heightIn(min = 44.dp),
+                                .heightIn(min = WhiteDnsLayout.controlHeight),
                             label = action.label,
                             emphasized = action.emphasized,
                             enabled = action.enabled,
@@ -3630,34 +3552,6 @@ private fun ConnectionProfilesSettings(
                 enabled = canManageProfiles,
                 onClick = qrScanner,
             ),
-            ProfileTopAction(
-                label = if (serverTestState.isRunning) {
-                    WhiteDnsL10n.serverTestRunning
-                } else {
-                    WhiteDnsL10n.serverTestButton
-                },
-                emphasized = connectionStatus == ConnectionStatus.CONNECTED && !serverTestState.isRunning,
-                enabled = connectionStatus == ConnectionStatus.CONNECTED && !serverTestState.isRunning,
-                onClick = { onServerTestClick(null) },
-            ),
-            ProfileTopAction(
-                label = WhiteDnsL10n.profileBtnDeleteDups,
-                emphasized = false,
-                enabled = canManageProfiles && duplicateProfileCount > 0,
-                onClick = {
-                    showDeleteDuplicatesDialog = true
-                },
-            ),
-            ProfileTopAction(
-                label = WhiteDnsL10n.profileBtnExportAll,
-                emphasized = false,
-                enabled = customProfiles.any {
-                    it.customServerDomain.isNotBlank() && it.customServerEncryptionKey.isNotBlank()
-                },
-                onClick = {
-                    showExportAllDialog = true
-                },
-            ),
         )
     )
     importNotice?.let { message ->
@@ -3665,7 +3559,7 @@ private fun ConnectionProfilesSettings(
         Text(
             text = message,
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 color = if (importNoticeIsError) WhiteDnsPalette.Error else WhiteDnsPalette.Success,
                 fontWeight = FontWeight.Medium,
             ),
@@ -3673,12 +3567,59 @@ private fun ConnectionProfilesSettings(
     }
 
     SectionDivider()
-    GroupLabel(WhiteDnsL10n.groupCustomConnections)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = WhiteDnsL10n.groupCustomConnections,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontSize = 12.sp,
+                color = WhiteDnsPalette.SectionTitle,
+                fontWeight = FontWeight.Bold,
+            ),
+        )
+        ProfileActionsMenu(
+            contentDescription = "${WhiteDnsL10n.groupCustomConnections}: ${WhiteDnsL10n.connectionProfileMenuActions}",
+            alwaysEnabled = true,
+            actions = listOf(
+                ProfileMenuAction(
+                    label = if (serverTestState.isRunning) {
+                        WhiteDnsL10n.serverTestRunning
+                    } else {
+                        WhiteDnsL10n.serverTestButton
+                    },
+                    icon = Icons.Rounded.Speed,
+                    contentDescription = WhiteDnsL10n.serverTestButton,
+                    enabled = connectionStatus == ConnectionStatus.CONNECTED && !serverTestState.isRunning,
+                    onClick = { onServerTestClick(null) },
+                ),
+                ProfileMenuAction(
+                    label = WhiteDnsL10n.profileBtnDeleteDups,
+                    icon = Icons.Rounded.Delete,
+                    contentDescription = WhiteDnsL10n.profileBtnDeleteDups,
+                    enabled = canManageProfiles && duplicateProfileCount > 0,
+                    onClick = { showDeleteDuplicatesDialog = true },
+                ),
+                ProfileMenuAction(
+                    label = WhiteDnsL10n.profileBtnExportAll,
+                    icon = Icons.Rounded.Link,
+                    contentDescription = WhiteDnsL10n.profileBtnExportAll,
+                    enabled = customProfiles.any {
+                        it.customServerDomain.isNotBlank() && it.customServerEncryptionKey.isNotBlank()
+                    },
+                    onClick = { showExportAllDialog = true },
+                ),
+            ),
+        )
+    }
+    Spacer(modifier = Modifier.height(WhiteDnsSpacing.sm))
     if (serverTestState.results.isEmpty() && serverTestState.message.isNotBlank()) {
         Text(
             text = serverTestDisplayMessage(serverTestState),
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 color = WhiteDnsPalette.Muted,
                 fontWeight = FontWeight.Medium,
             ),
@@ -3689,7 +3630,7 @@ private fun ConnectionProfilesSettings(
         Text(
             text = WhiteDnsL10n.customConnectionsEmpty,
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 color = WhiteDnsPalette.Muted,
             ),
         )
@@ -3982,7 +3923,7 @@ private fun ResolverProfilesSettings(
         Text(
             text = WhiteDnsL10n.profileNoResolverLists,
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 color = WhiteDnsPalette.Muted,
             ),
         )
@@ -4218,7 +4159,7 @@ private fun SettingProfilesSettings(
         Text(
             text = WhiteDnsL10n.profileNoSettingProfiles,
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 color = WhiteDnsPalette.Muted,
             ),
         )
@@ -4384,10 +4325,10 @@ private fun AdvancedSettingsProfileDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.dialog))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(22.dp))
-                .padding(18.dp),
+                .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.dialog))
+                .padding(16.dp),
         ) {
             Text(
                 text = if (profile == null) WhiteDnsL10n.profileDialogCreateSetting else WhiteDnsL10n.profileDialogEditSetting,
@@ -4395,7 +4336,6 @@ private fun AdvancedSettingsProfileDialog(
                     fontSize = 14.sp,
                     color = WhiteDnsPalette.Ink,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.1.sp,
                 ),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.md))
@@ -4481,11 +4421,11 @@ private fun SettingProfileRow(
             .clip(RoundedCornerShape(11.dp))
             .background(if (selected) WhiteDnsPalette.AccentSurface else WhiteDnsPalette.SurfaceAlt)
             .border(
-                1.5.dp,
-                if (selected) WhiteDnsPalette.Accent.copy(alpha = 0.18f) else WhiteDnsPalette.Border,
+                1.dp,
+                if (selected) WhiteDnsPalette.Accent.copy(alpha = 0.18f) else Color.Transparent,
                 RoundedCornerShape(11.dp),
             )
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .padding(horizontal = 8.dp, vertical = 8.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -4515,7 +4455,7 @@ private fun SettingProfileRow(
                 Text(
                     text = "${advancedProfileSummary(profile)}$summarySuffix",
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 10.sp,
+                        fontSize = 12.sp,
                         color = when {
                             dirty -> WhiteDnsPalette.WarningText
                             selected -> WhiteDnsPalette.AccentText
@@ -4622,10 +4562,10 @@ private fun ResolverProfileDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.dialog))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(22.dp))
-                .padding(18.dp),
+                .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.dialog))
+                .padding(16.dp),
         ) {
             Text(
                 text = if (profile == null) WhiteDnsL10n.profileDialogCreateResolver else WhiteDnsL10n.profileDialogEditResolver,
@@ -4633,7 +4573,6 @@ private fun ResolverProfileDialog(
                     fontSize = 14.sp,
                     color = WhiteDnsPalette.Ink,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.1.sp,
                 ),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.md))
@@ -4643,6 +4582,7 @@ private fun ResolverProfileDialog(
                 onValueChange = { name = it },
                 placeholder = WhiteDnsL10n.resolverProfileHomeResolversPlaceholder,
             )
+            Spacer(modifier = Modifier.height(WhiteDnsSpacing.inputSpacing))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -4672,11 +4612,12 @@ private fun ResolverProfileDialog(
                 Text(
                     text = message,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 10.sp,
+                        fontSize = 12.sp,
                         color = WhiteDnsPalette.Error,
                     ),
                 )
             }
+            Spacer(modifier = Modifier.height(WhiteDnsSpacing.inputSpacing))
             WhiteDnsTextField(
                 label = WhiteDnsL10n.profileFieldResolvers,
                 value = resolverText,
@@ -4694,7 +4635,7 @@ private fun ResolverProfileDialog(
                 Text(
                     text = message,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 10.sp,
+                        fontSize = 12.sp,
                         color = if (validationMessageIsError) WhiteDnsPalette.Error else WhiteDnsPalette.Muted,
                     ),
                 )
@@ -4759,11 +4700,11 @@ private fun ResolverProfileRow(
             .clip(RoundedCornerShape(11.dp))
             .background(if (selected) WhiteDnsPalette.AccentSurface else WhiteDnsPalette.SurfaceAlt)
             .border(
-                1.5.dp,
-                if (selected) WhiteDnsPalette.Accent.copy(alpha = 0.18f) else WhiteDnsPalette.Border,
+                1.dp,
+                if (selected) WhiteDnsPalette.Accent.copy(alpha = 0.18f) else Color.Transparent,
                 RoundedCornerShape(11.dp),
             )
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .padding(horizontal = 8.dp, vertical = 8.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -4793,7 +4734,7 @@ private fun ResolverProfileRow(
                 Text(
                     text = resolverSummary,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 10.sp,
+                        fontSize = 12.sp,
                         color = if (selected) WhiteDnsPalette.AccentText else WhiteDnsPalette.Muted,
                     ),
                     maxLines = 1,
@@ -4857,10 +4798,10 @@ private fun ConnectionProfileImportDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.dialog))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(22.dp))
-                .padding(18.dp),
+                .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.dialog))
+                .padding(16.dp),
         ) {
             Text(
                 text = WhiteDnsL10n.profileDialogImportConnection,
@@ -4868,7 +4809,6 @@ private fun ConnectionProfileImportDialog(
                     fontSize = 14.sp,
                     color = WhiteDnsPalette.Ink,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.1.sp,
                 ),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.md))
@@ -4896,7 +4836,7 @@ private fun ConnectionProfileImportDialog(
                 Text(
                     text = message,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 10.sp,
+                        fontSize = 12.sp,
                         color = WhiteDnsPalette.Error,
                     ),
                 )
@@ -4946,10 +4886,10 @@ private fun ConnectionProfileExportDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.dialog))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(22.dp))
-                .padding(18.dp),
+                .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.dialog))
+                .padding(16.dp),
         ) {
             Text(
                 text = title,
@@ -4957,7 +4897,6 @@ private fun ConnectionProfileExportDialog(
                     fontSize = 14.sp,
                     color = WhiteDnsPalette.Ink,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.1.sp,
                 ),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.md))
@@ -5017,7 +4956,7 @@ private fun ConnectionProfileExportDialog(
                 Text(
                     text = linkResult.exceptionOrNull()?.message ?: WhiteDnsL10n.errorExportProfile,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 11.sp,
+                        fontSize = 13.sp,
                         color = WhiteDnsPalette.Error,
                     ),
                 )
@@ -5076,10 +5015,10 @@ private fun ResolverProfilesExportDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.dialog))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(22.dp))
-                .padding(18.dp),
+                .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.dialog))
+                .padding(16.dp),
         ) {
             Text(
                 text = WhiteDnsL10n.profileDialogExportAllResolvers,
@@ -5087,7 +5026,6 @@ private fun ResolverProfilesExportDialog(
                     fontSize = 14.sp,
                     color = WhiteDnsPalette.Ink,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.1.sp,
                 ),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.md))
@@ -5095,7 +5033,7 @@ private fun ResolverProfilesExportDialog(
                 exportState.saving -> {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         CircularProgressIndicator(
@@ -5106,7 +5044,7 @@ private fun ResolverProfilesExportDialog(
                         Text(
                             text = WhiteDnsL10n.profileExportSavingFile,
                             style = MaterialTheme.typography.bodyMedium.copy(
-                                fontSize = 11.sp,
+                                fontSize = 13.sp,
                                 color = WhiteDnsPalette.Muted,
                             ),
                         )
@@ -5124,7 +5062,7 @@ private fun ResolverProfilesExportDialog(
                     Text(
                         text = exportState.errorMessage ?: WhiteDnsL10n.errorExportProfile,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 11.sp,
+                            fontSize = 13.sp,
                             color = WhiteDnsPalette.Error,
                         ),
                     )
@@ -5152,7 +5090,7 @@ private fun ResolverProfilesExportDialog(
                     Text(
                         text = WhiteDnsL10n.profileExportSavedToTemplate.format(exportState.savedLocation),
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 10.sp,
+                            fontSize = 12.sp,
                             color = WhiteDnsPalette.Muted,
                         ),
                     )
@@ -5201,15 +5139,15 @@ private fun ProfileQrPreview(link: String) {
                 modifier = Modifier
                     .size(210.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(Color.White)
-                    .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(12.dp))
-                    .padding(10.dp),
+                    .background(WhiteDnsPalette.OnAccent)
+                    .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(12.dp))
+                    .padding(8.dp),
             )
         } else {
             Text(
                 text = WhiteDnsL10n.profileQrUnavailable,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     color = WhiteDnsPalette.Error,
                 ),
             )
@@ -5322,10 +5260,10 @@ private fun ConnectionProfileDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = maxDialogHeight)
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.dialog))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(22.dp))
-                .padding(18.dp),
+                .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.dialog))
+                .padding(16.dp),
         ) {
             Text(
                 text = if (profile == null) WhiteDnsL10n.profileDialogCreateConnection else WhiteDnsL10n.profileDialogEditConnection,
@@ -5333,7 +5271,6 @@ private fun ConnectionProfileDialog(
                     fontSize = 14.sp,
                     color = WhiteDnsPalette.Ink,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.1.sp,
                 ),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.md))
@@ -5345,6 +5282,7 @@ private fun ConnectionProfileDialog(
                     .fillMaxWidth()
                     .weight(1f, fill = false)
                     .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(WhiteDnsSpacing.inputSpacing),
             ) {
                 // Editable on existing profiles too. Gating this to creation meant an
                 // existing profile could never be moved to CottenDNS, and so could
@@ -5383,17 +5321,14 @@ private fun ConnectionProfileDialog(
                     onValueChange = { encryptionMethod = it },
                 )
                 if (effectiveEngine == DnsClientEngine.CottenDns) {
-                    Spacer(modifier = Modifier.height(WhiteDnsSpacing.md))
                     Text(
                         text = WhiteDnsL10n.profileCottenSectionTitle,
                         style = MaterialTheme.typography.bodyMedium.copy(
                             fontSize = 12.sp,
                             color = WhiteDnsPalette.FieldLabel,
                             fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.1.sp,
                         ),
                     )
-                    Spacer(modifier = Modifier.height(WhiteDnsSpacing.sm))
                     WhiteDnsDropdownField(
                         label = WhiteDnsL10n.profileFieldConfigPreset,
                         value = cotten.configPreset,
@@ -5428,7 +5363,7 @@ private fun ConnectionProfileDialog(
                         Text(
                             text = WhiteDnsL10n.cottenOverrideHint,
                             style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 10.sp,
+                                fontSize = 12.sp,
                                 color = WhiteDnsPalette.Muted,
                             ),
                         )
@@ -5592,7 +5527,7 @@ private fun ConnectionProfileRow(
     val rowBorder = when {
         testRating != null -> testRating.color.copy(alpha = 0.24f)
         selected -> WhiteDnsPalette.Accent.copy(alpha = 0.18f)
-        else -> WhiteDnsPalette.Border
+        else -> Color.Transparent
     }
     Column(
         modifier = Modifier
@@ -5600,11 +5535,11 @@ private fun ConnectionProfileRow(
             .clip(RoundedCornerShape(11.dp))
             .background(rowSurface)
             .border(
-                1.5.dp,
+                1.dp,
                 rowBorder,
                 RoundedCornerShape(11.dp),
             )
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .padding(horizontal = 8.dp, vertical = 8.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -5634,7 +5569,7 @@ private fun ConnectionProfileRow(
                 Text(
                     text = connectionSummary,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 10.sp,
+                        fontSize = 12.sp,
                         color = when {
                             active -> WhiteDnsPalette.Success
                             selected -> WhiteDnsPalette.AccentText
@@ -5693,10 +5628,10 @@ private fun ServerTestInlineResult(rating: ServerTestRatingDisplay) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(9.dp))
             .background(rating.color.copy(alpha = 0.12f))
-            .border(1.5.dp, rating.color.copy(alpha = 0.2f), RoundedCornerShape(9.dp))
-            .padding(horizontal = 10.dp, vertical = 7.dp),
+            .border(1.dp, rating.color.copy(alpha = 0.2f), RoundedCornerShape(9.dp))
+            .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         if (rating.loading) {
             CircularProgressIndicator(
@@ -5718,19 +5653,18 @@ private fun ServerTestInlineResult(rating: ServerTestRatingDisplay) {
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 9.sp,
+                fontSize = 12.sp,
                 color = WhiteDnsPalette.Ink,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 0.8.sp,
             ),
         )
         Row(
             modifier = Modifier
                 .clip(RoundedCornerShape(8.dp))
                 .background(rating.color.copy(alpha = 0.13f))
-                .padding(horizontal = 8.dp, vertical = 5.dp),
+                .padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Icon(
                 imageVector = rating.icon,
@@ -5743,10 +5677,9 @@ private fun ServerTestInlineResult(rating: ServerTestRatingDisplay) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 8.sp,
+                    fontSize = 12.sp,
                     color = rating.color,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.7.sp,
                 ),
             )
         }
@@ -5765,19 +5698,15 @@ private data class ProfileMenuAction(
 private fun ProfileActionsMenu(
     contentDescription: String,
     actions: List<ProfileMenuAction>,
+    alwaysEnabled: Boolean = false,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val haptic = rememberHapticFeedback()
-    val enabled = actions.any { it.enabled }
+    val enabled = alwaysEnabled || actions.any { it.enabled }
     val background = when {
-        !enabled -> WhiteDnsPalette.SurfaceAlt
+        !enabled -> Color.Transparent
         expanded -> WhiteDnsPalette.AccentSurface
-        else -> WhiteDnsPalette.Surface
-    }
-    val border = when {
-        !enabled -> WhiteDnsPalette.Divider
-        expanded -> WhiteDnsPalette.Accent.copy(alpha = 0.28f)
-        else -> WhiteDnsPalette.Border
+        else -> Color.Transparent
     }
     val iconColor = when {
         !enabled -> WhiteDnsPalette.Disabled
@@ -5788,10 +5717,9 @@ private fun ProfileActionsMenu(
     Box {
         Box(
             modifier = Modifier
-                .size(44.dp)
-                .clip(RoundedCornerShape(10.dp))
+                .size(WhiteDnsLayout.minimumTouchTarget)
+                .clip(RoundedCornerShape(WhiteDnsRadii.control))
                 .background(background)
-                .border(1.5.dp, border, RoundedCornerShape(10.dp))
                 .clickable(enabled = enabled, role = Role.Button) {
                     haptic.performLight()
                     expanded = true
@@ -5810,15 +5738,15 @@ private fun ProfileActionsMenu(
             onDismissRequest = { expanded = false },
             modifier = Modifier
                 .widthIn(min = 196.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.card))
                 .background(WhiteDnsPalette.DropdownSurface),
         ) {
             actions.forEach { action ->
                 val itemColor = if (action.enabled) WhiteDnsPalette.Ink else WhiteDnsPalette.Disabled
                 DropdownMenuItem(
                     modifier = Modifier
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                        .clip(RoundedCornerShape(10.dp)),
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .clip(RoundedCornerShape(WhiteDnsRadii.control)),
                     enabled = action.enabled,
                     leadingIcon = {
                         Icon(
@@ -5861,10 +5789,10 @@ private fun DeleteProfileConfirmationDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.dialog))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(22.dp))
-                .padding(18.dp),
+                .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.dialog))
+                .padding(16.dp),
         ) {
             Text(
                 text = title,
@@ -5872,14 +5800,13 @@ private fun DeleteProfileConfirmationDialog(
                     fontSize = 14.sp,
                     color = WhiteDnsPalette.Ink,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.1.sp,
                 ),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.inputSpacing))
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 11.sp,
+                    fontSize = 13.sp,
                     lineHeight = 16.sp,
                     color = WhiteDnsPalette.Description,
                 ),
@@ -5919,16 +5846,9 @@ private fun ProfileDragHandle(
 ) {
     val haptic = rememberHapticFeedback()
     val background = when {
-        !enabled -> WhiteDnsPalette.SurfaceAlt
+        !enabled -> Color.Transparent
         dragging -> WhiteDnsPalette.AccentSurface
-        else -> WhiteDnsPalette.Surface
-    }
-    val border = if (dragging) {
-        WhiteDnsPalette.Accent.copy(alpha = 0.40f)
-    } else if (enabled) {
-        WhiteDnsPalette.Border
-    } else {
-        WhiteDnsPalette.Divider
+        else -> Color.Transparent
     }
     val iconColor = when {
         !enabled -> WhiteDnsPalette.Disabled
@@ -5938,10 +5858,9 @@ private fun ProfileDragHandle(
 
     Box(
         modifier = Modifier
-            .size(width = 28.dp, height = 44.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .size(WhiteDnsLayout.minimumTouchTarget)
+            .clip(RoundedCornerShape(WhiteDnsRadii.control))
             .background(background)
-            .border(1.5.dp, border, RoundedCornerShape(8.dp))
             .pointerInput(enabled) {
                 if (!enabled) {
                     return@pointerInput
@@ -5969,7 +5888,7 @@ private fun ProfileDragHandle(
             imageVector = Icons.Rounded.DragHandle,
             contentDescription = WhiteDnsL10n.cdDragToReorder,
             tint = iconColor,
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(20.dp),
         )
     }
 }
@@ -6002,10 +5921,10 @@ private fun ProfileIconButton(
 
     Box(
         modifier = modifier
-            .size(28.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .size(WhiteDnsLayout.minimumTouchTarget)
+            .clip(RoundedCornerShape(WhiteDnsRadii.control))
             .background(background)
-            .border(1.5.dp, border, RoundedCornerShape(8.dp))
+            .border(1.dp, border, RoundedCornerShape(WhiteDnsRadii.control))
             .clickable(enabled = enabled, role = Role.Button) {
                 haptic.performMedium()
                 onClick()
@@ -6034,42 +5953,44 @@ private fun CompactActionButton(
     val background = when {
         !enabled -> WhiteDnsPalette.SurfaceAlt
         tone == CompactActionTone.Accent -> WhiteDnsPalette.Accent
-        tone == CompactActionTone.Success -> WhiteDnsPalette.Success
-        tone == CompactActionTone.Danger -> WhiteDnsPalette.Error
+        tone == CompactActionTone.Success -> WhiteDnsPalette.SuccessSurface
+        tone == CompactActionTone.Danger -> WhiteDnsPalette.ErrorSurface
         else -> WhiteDnsPalette.Surface
     }
     val border = when {
-        !enabled -> WhiteDnsPalette.Divider
+        !enabled -> Color.Transparent
         tone == CompactActionTone.Accent -> WhiteDnsPalette.AccentPressed
-        tone == CompactActionTone.Success -> WhiteDnsPalette.SuccessSurface
-        tone == CompactActionTone.Danger -> WhiteDnsPalette.ErrorSurface
-        else -> WhiteDnsPalette.Border
+        tone == CompactActionTone.Success -> WhiteDnsPalette.Success
+        tone == CompactActionTone.Danger -> WhiteDnsPalette.Error
+        else -> Color.Transparent
     }
     val textColor = when {
         !enabled -> WhiteDnsPalette.Disabled
         tone == CompactActionTone.Default -> WhiteDnsPalette.Muted
+        tone == CompactActionTone.Success -> WhiteDnsPalette.Success
+        tone == CompactActionTone.Danger -> WhiteDnsPalette.Error
         else -> WhiteDnsPalette.OnAccent
     }
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(9.dp))
+            .heightIn(min = WhiteDnsLayout.controlHeight)
+            .clip(RoundedCornerShape(WhiteDnsRadii.control))
             .background(background)
-            .border(1.5.dp, border, RoundedCornerShape(9.dp))
+            .border(1.dp, border, RoundedCornerShape(WhiteDnsRadii.control))
             .clickable(enabled = enabled, role = Role.Button) {
                 haptic.performMedium()
                 onClick()
             }
-            .padding(horizontal = 10.dp, vertical = 8.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 8.sp,
+                fontSize = 12.sp,
                 color = textColor,
                 fontWeight = FontWeight.Medium,
-                letterSpacing = 0.9.sp,
             ),
         )
     }
@@ -6488,22 +6409,24 @@ private fun HeaderCard(
 
     Row(
         modifier = Modifier
+            .widthIn(max = WhiteDnsLayout.contentMaxWidth)
             .fillMaxWidth()
-            .widthIn(max = 420.dp)
-            .padding(horizontal = 20.dp, vertical = 22.dp),
+            .padding(
+                horizontal = WhiteDnsLayout.screenHorizontalPadding,
+                vertical = WhiteDnsSpacing.sm,
+            ),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Box(
                 modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(9.dp))
+                    .size(WhiteDnsLayout.minimumTouchTarget)
+                    .clip(RoundedCornerShape(WhiteDnsRadii.control))
                     .background(WhiteDnsPalette.SurfaceAlt)
-                    .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(9.dp))
                     .semantics { contentDescription = context.getString(R.string.cd_logo_telegram) }
                     .clickable(role = Role.Button) {
                         haptic.performLight()
@@ -6531,15 +6454,10 @@ private fun HeaderCard(
         Box {
             Box(
                 modifier = Modifier
-                    .size(44.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .size(WhiteDnsLayout.minimumTouchTarget)
+                    .clip(RoundedCornerShape(WhiteDnsRadii.control))
                     .background(
-                        if (overflowExpanded) WhiteDnsPalette.AccentSurface else WhiteDnsPalette.Surface,
-                    )
-                    .border(
-                        1.5.dp,
-                        if (overflowExpanded) WhiteDnsPalette.Accent.copy(alpha = 0.28f) else WhiteDnsPalette.Border,
-                        RoundedCornerShape(10.dp),
+                        if (overflowExpanded) WhiteDnsPalette.AccentSurface else Color.Transparent,
                     )
                     .semantics { contentDescription = context.getString(R.string.cd_menu_button) }
                     .clickable(role = Role.Button) {
@@ -6560,24 +6478,23 @@ private fun HeaderCard(
                 expanded = overflowExpanded,
                 onDismissRequest = { overflowExpanded = false },
                 modifier = Modifier
-                    .widthIn(min = 220.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .widthIn(min = 196.dp, max = 240.dp)
+                    .clip(RoundedCornerShape(WhiteDnsRadii.card))
                     .background(WhiteDnsPalette.DropdownSurface),
             ) {
                 DropdownMenuItem(
                     modifier = Modifier
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                        .clip(RoundedCornerShape(10.dp)),
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .clip(RoundedCornerShape(WhiteDnsRadii.control)),
                     enabled = false,
                     text = {
                         Column {
                             Text(
                                 text = WhiteDnsL10n.menuVersion,
                                 style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontSize = 10.sp,
+                                    fontSize = 12.sp,
                                     color = WhiteDnsPalette.Muted,
                                     fontWeight = FontWeight.Bold,
-                                    letterSpacing = 0.7.sp,
                                 ),
                             )
                             Spacer(modifier = Modifier.height(WhiteDnsSpacing.xs))
@@ -6596,14 +6513,14 @@ private fun HeaderCard(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 10.dp)
-                        .height(1.5.dp)
+                        .padding(horizontal = 8.dp)
+                        .height(1.dp)
                         .background(WhiteDnsPalette.Divider),
                 )
                 DropdownMenuItem(
                     modifier = Modifier
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                        .clip(RoundedCornerShape(10.dp)),
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .clip(RoundedCornerShape(WhiteDnsRadii.control)),
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Rounded.Settings,
@@ -6630,8 +6547,8 @@ private fun HeaderCard(
                 )
                 DropdownMenuItem(
                     modifier = Modifier
-                        .padding(horizontal = 6.dp, vertical = 2.dp)
-                        .clip(RoundedCornerShape(10.dp)),
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .clip(RoundedCornerShape(WhiteDnsRadii.control)),
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Rounded.Favorite,
@@ -6708,9 +6625,9 @@ private fun LanguageModeSegmentedControl(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(12.dp))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.ControlBorder, RoundedCornerShape(12.dp))
-                .padding(3.dp),
-            horizontalArrangement = Arrangement.spacedBy(3.dp),
+                .border(1.dp, WhiteDnsPalette.ControlBorder, RoundedCornerShape(12.dp))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             options.forEach { (code, label) ->
                 val selected = selectedCode == code
@@ -6727,6 +6644,7 @@ private fun LanguageModeSegmentedControl(
                 Box(
                     modifier = Modifier
                         .weight(1f)
+                        .heightIn(min = WhiteDnsLayout.controlHeight)
                         .clip(RoundedCornerShape(9.dp))
                         .background(background)
                         .selectable(
@@ -6738,7 +6656,7 @@ private fun LanguageModeSegmentedControl(
                             },
                         )
                         .semantics(mergeDescendants = true) {}
-                        .padding(horizontal = 6.dp, vertical = 9.dp),
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -6746,10 +6664,9 @@ private fun LanguageModeSegmentedControl(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 10.sp,
+                            fontSize = 12.sp,
                             color = textColor,
                             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                            letterSpacing = 0.4.sp,
                         ),
                     )
                 }
@@ -6770,10 +6687,10 @@ private fun AppSettingsDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.dialog))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(22.dp))
-                .padding(18.dp),
+                .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.dialog))
+                .padding(16.dp),
         ) {
             Text(
                 text = WhiteDnsL10n.appSettingsTitle,
@@ -6781,7 +6698,6 @@ private fun AppSettingsDialog(
                     fontSize = 14.sp,
                     color = WhiteDnsPalette.Ink,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.1.sp,
                 ),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.md))
@@ -6819,11 +6735,11 @@ private fun DonationDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 560.dp)
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.dialog))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(22.dp))
+                .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.dialog))
                 .verticalScroll(rememberScrollState())
-                .padding(18.dp),
+                .padding(16.dp),
         ) {
             Text(
                 text = WhiteDnsL10n.supportTitle,
@@ -6831,14 +6747,13 @@ private fun DonationDialog(
                     fontSize = 14.sp,
                     color = WhiteDnsPalette.Ink,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.1.sp,
                 ),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.sm))
             Text(
                 text = WhiteDnsL10n.supportBody,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 11.sp,
+                    fontSize = 13.sp,
                     lineHeight = 16.sp,
                     color = WhiteDnsPalette.Description,
                 ),
@@ -6885,12 +6800,12 @@ private fun DonationWalletField(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.control))
                 .background(WhiteDnsPalette.Input)
-                .border(2.5.dp, WhiteDnsPalette.Divider, RoundedCornerShape(10.dp))
+                .border(1.dp, WhiteDnsPalette.Divider, RoundedCornerShape(WhiteDnsRadii.control))
                 .semantics { contentDescription = context.getString(R.string.cd_copy_address, address) }
                 .clickable(role = Role.Button, onClick = onCopy)
-                .padding(horizontal = 12.dp, vertical = 11.dp),
+                .padding(horizontal = 12.dp, vertical = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -6908,9 +6823,8 @@ private fun DonationWalletField(
                 text = WhiteDnsL10n.btnCopy,
                 style = MaterialTheme.typography.bodyMedium.copy(
                     color = WhiteDnsPalette.AccentText,
-                    fontSize = 9.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.8.sp,
                 ),
             )
         }
@@ -6927,24 +6841,23 @@ private fun NotificationPermissionBanner(onClick: () -> Unit) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(WhiteDnsPalette.WarningSurface)
-            .border(1.5.dp, WhiteDnsPalette.Warning.copy(alpha = 0.26f), RoundedCornerShape(16.dp))
-            .padding(14.dp),
+            .border(1.dp, WhiteDnsPalette.Warning.copy(alpha = 0.26f), RoundedCornerShape(16.dp))
+            .padding(16.dp),
     ) {
         Text(
             text = WhiteDnsL10n.bannerNotificationBlockedTitle,
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 color = WhiteDnsPalette.WarningText,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 1.1.sp,
             ),
         )
         Spacer(modifier = Modifier.height(WhiteDnsSpacing.iconSpacing))
         Text(
             text = WhiteDnsL10n.bannerNotificationBlockedBody,
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 11.sp,
-                lineHeight = 15.sp,
+                fontSize = 13.sp,
+                lineHeight = 19.sp,
                 color = WhiteDnsPalette.WarningText,
             ),
         )
@@ -6952,24 +6865,24 @@ private fun NotificationPermissionBanner(onClick: () -> Unit) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
+                .heightIn(min = WhiteDnsLayout.controlHeight)
+                .clip(RoundedCornerShape(WhiteDnsRadii.control))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Warning.copy(alpha = 0.32f), RoundedCornerShape(10.dp))
+                .border(1.dp, WhiteDnsPalette.Warning.copy(alpha = 0.32f), RoundedCornerShape(WhiteDnsRadii.control))
                 .semantics { contentDescription = context.getString(R.string.cd_enable_vpn_notification) }
                 .clickable(role = Role.Button) {
                     haptic.performMedium()
                     onClick()
                 }
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = WhiteDnsL10n.bannerEnableNotification,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 9.sp,
+                    fontSize = 12.sp,
                     color = WhiteDnsPalette.WarningText,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp,
                 ),
             )
         }
@@ -6989,27 +6902,26 @@ private fun BatteryOptimizationBanner(
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .background(WhiteDnsPalette.WarningSurface)
-            .border(1.5.dp, WhiteDnsPalette.Warning.copy(alpha = 0.26f), RoundedCornerShape(16.dp))
-            .padding(14.dp),
+            .border(1.dp, WhiteDnsPalette.Warning.copy(alpha = 0.26f), RoundedCornerShape(16.dp))
+            .padding(16.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = WhiteDnsL10n.bannerBatteryTitle,
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     color = WhiteDnsPalette.WarningText,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.1.sp,
                 ),
             )
             Box(
                 modifier = Modifier
-                    .size(28.dp)
+                    .size(WhiteDnsLayout.minimumTouchTarget)
                     .clip(CircleShape)
                     .clickable(role = Role.Button) {
                         haptic.performLight()
@@ -7029,8 +6941,8 @@ private fun BatteryOptimizationBanner(
         Text(
             text = WhiteDnsL10n.bannerBatteryBody,
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 11.sp,
-                lineHeight = 15.sp,
+                fontSize = 13.sp,
+                lineHeight = 19.sp,
                 color = WhiteDnsPalette.WarningText,
             ),
         )
@@ -7038,24 +6950,24 @@ private fun BatteryOptimizationBanner(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(10.dp))
+                .heightIn(min = WhiteDnsLayout.controlHeight)
+                .clip(RoundedCornerShape(WhiteDnsRadii.control))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Warning.copy(alpha = 0.32f), RoundedCornerShape(10.dp))
+                .border(1.dp, WhiteDnsPalette.Warning.copy(alpha = 0.32f), RoundedCornerShape(WhiteDnsRadii.control))
                 .semantics { contentDescription = context.getString(R.string.cd_allow_background_vpn) }
                 .clickable(role = Role.Button) {
                     haptic.performMedium()
                     onClick()
                 }
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = 12.dp, vertical = 8.dp),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = WhiteDnsL10n.bannerAllowBackground,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 9.sp,
+                    fontSize = 12.sp,
                     color = WhiteDnsPalette.WarningText,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp,
                 ),
             )
         }
@@ -7069,11 +6981,11 @@ private fun FullVpnPerformanceWarning(onDismiss: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(WhiteDnsRadii.card))
             .background(WhiteDnsPalette.WarningSurface)
-            .border(1.5.dp, WhiteDnsPalette.Warning.copy(alpha = 0.24f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+            .border(1.dp, WhiteDnsPalette.Warning.copy(alpha = 0.24f), RoundedCornerShape(WhiteDnsRadii.card))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Top,
     ) {
         Icon(
@@ -7086,18 +6998,17 @@ private fun FullVpnPerformanceWarning(onDismiss: () -> Unit) {
             Text(
                 text = WhiteDnsL10n.bannerFullVpnWarningTitle,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 9.sp,
+                    fontSize = 12.sp,
                     color = WhiteDnsPalette.WarningText,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.9.sp,
                 ),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.xs))
             Text(
                 text = WhiteDnsL10n.bannerFullVpnWarningBody,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 10.sp,
-                    lineHeight = 14.sp,
+                    fontSize = 12.sp,
+                    lineHeight = 18.sp,
                     color = WhiteDnsPalette.WarningText,
                     fontWeight = FontWeight.Medium,
                 ),
@@ -7105,7 +7016,7 @@ private fun FullVpnPerformanceWarning(onDismiss: () -> Unit) {
         }
         Box(
             modifier = Modifier
-                .size(28.dp)
+                .size(WhiteDnsLayout.minimumTouchTarget)
                 .clip(CircleShape)
                 .clickable(role = Role.Button) {
                     haptic.performLight()
@@ -7156,8 +7067,8 @@ private fun SplitTunnelSettingsPanel(
         )
         AnimatedVisibility(
             visible = settings.splitTunnelMode != WhiteDnsOptions.SplitTunnelModeOff,
-            enter = fadeIn(animationSpec = tween(180)) + expandVertically(animationSpec = tween(180)),
-            exit = fadeOut(animationSpec = tween(140)) + shrinkVertically(animationSpec = tween(140)),
+            enter = fadeIn(animationSpec = tween(180)),
+            exit = fadeOut(animationSpec = tween(140)),
         ) {
             Column {
                 Spacer(modifier = Modifier.height(WhiteDnsSpacing.sm))
@@ -7169,7 +7080,7 @@ private fun SplitTunnelSettingsPanel(
                     Text(
                         text = WhiteDnsL10n.splitTunnelSelected,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 11.sp,
+                            fontSize = 13.sp,
                             color = WhiteDnsPalette.Muted,
                         ),
                     )
@@ -7237,10 +7148,10 @@ private fun SplitTunnelAppDialog(
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(max = 620.dp)
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.dialog))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(22.dp))
-                .padding(18.dp),
+                .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.dialog))
+                .padding(16.dp),
         ) {
             Text(
                 text = WhiteDnsL10n.splitTunnelDialogTitle,
@@ -7248,7 +7159,6 @@ private fun SplitTunnelAppDialog(
                     fontSize = 14.sp,
                     color = WhiteDnsPalette.Ink,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.1.sp,
                 ),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.md))
@@ -7269,7 +7179,7 @@ private fun SplitTunnelAppDialog(
                     Text(
                         text = WhiteDnsL10n.splitTunnelNoAppsFound,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 11.sp,
+                            fontSize = 13.sp,
                             color = WhiteDnsPalette.Muted,
                         ),
                     )
@@ -7351,8 +7261,8 @@ private fun SplitTunnelAppRow(
             .semantics {
                 contentDescription = context.getString(R.string.cd_split_tunnel_app_toggle, app.label)
             }
-            .padding(vertical = 9.dp, horizontal = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+            .padding(vertical = 8.dp, horizontal = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Checkbox(
@@ -7381,7 +7291,7 @@ private fun SplitTunnelAppRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     color = WhiteDnsPalette.Muted,
                 ),
             )
@@ -7397,47 +7307,32 @@ private fun ConnectButton(
     onClick: () -> Unit,
 ) {
     val haptic = rememberHapticFeedback()
-    val ringColor by animateColorAsState(
+    val borderColor by animateColorAsState(
         targetValue = when (status) {
-            ConnectionStatus.DISCONNECTED -> if (enabled) WhiteDnsPalette.Accent else WhiteDnsPalette.Divider
-            ConnectionStatus.CONNECTING -> WhiteDnsPalette.AccentPressed
+            ConnectionStatus.DISCONNECTED -> if (enabled) WhiteDnsPalette.Border else WhiteDnsPalette.Divider
+            ConnectionStatus.CONNECTING -> WhiteDnsPalette.Accent
             ConnectionStatus.CONNECTED -> WhiteDnsPalette.Success
         },
-        animationSpec = tween(400),
-        label = "connectRingColor",
+        animationSpec = tween(WhiteDnsAnimations.DURATION_FAST),
+        label = "connectCardBorder",
     )
-    val iconColor by animateColorAsState(
+    val actionBackgroundColor by animateColorAsState(
         targetValue = when (status) {
-            ConnectionStatus.DISCONNECTED -> if (enabled) WhiteDnsPalette.Accent else WhiteDnsPalette.Disabled
+            ConnectionStatus.DISCONNECTED -> if (enabled) WhiteDnsPalette.Accent else WhiteDnsPalette.SurfaceAlt
             ConnectionStatus.CONNECTING -> WhiteDnsPalette.AccentPressed
-            ConnectionStatus.CONNECTED -> WhiteDnsPalette.WarningText
+            ConnectionStatus.CONNECTED -> WhiteDnsPalette.SuccessSurface
         },
-        animationSpec = tween(400),
-        label = "connectIconColor",
+        animationSpec = tween(WhiteDnsAnimations.DURATION_FAST),
+        label = "connectActionBackground",
     )
-    val buttonScale by animateFloatAsState(
-        targetValue = if (status == ConnectionStatus.CONNECTED) 1.03f else 1f,
-        animationSpec = spring(dampingRatio = 0.5f, stiffness = 300f),
-        label = "connectButtonScale",
-    )
-    val infiniteTransition = rememberInfiniteTransition(label = "connectButtonMotion")
-    val spinAngle by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(1_200, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart,
-        ),
-        label = "connectSpinAngle",
-    )
-    val pulseAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.15f,
-        targetValue = 0.4f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "connectPulseAlpha",
+    val actionIconColor by animateColorAsState(
+        targetValue = when (status) {
+            ConnectionStatus.DISCONNECTED -> if (enabled) WhiteDnsPalette.OnAccent else WhiteDnsPalette.Disabled
+            ConnectionStatus.CONNECTING -> WhiteDnsPalette.OnAccent
+            ConnectionStatus.CONNECTED -> WhiteDnsPalette.Success
+        },
+        animationSpec = tween(WhiteDnsAnimations.DURATION_FAST),
+        label = "connectActionIcon",
     )
     val progressFraction by animateFloatAsState(
         targetValue = when (status) {
@@ -7448,11 +7343,17 @@ private fun ConnectButton(
         animationSpec = tween(300),
         label = "connectProgressFraction",
     )
-    val accentColor = WhiteDnsPalette.Accent
-    val borderColor = WhiteDnsPalette.Border
-    val successColor = WhiteDnsPalette.Success
-    val circleSize = 156.dp
-    val outerRingSize = 198.dp
+    val compactWidth = LocalConfiguration.current.screenWidthDp <= 360
+    val cardHeight = if (compactWidth) {
+        WhiteDnsLayout.connectRingCompact
+    } else {
+        WhiteDnsLayout.connectRingRegular
+    }
+    val actionSize = if (compactWidth) {
+        WhiteDnsLayout.controlHeight + WhiteDnsSpacing.lg
+    } else {
+        WhiteDnsLayout.controlHeight + WhiteDnsSpacing.xxl
+    }
     val connectStr = WhiteDnsL10n.btnConnect
     val connectingStr = WhiteDnsL10n.btnConnecting
     val stopStr = WhiteDnsL10n.btnStop
@@ -7461,168 +7362,106 @@ private fun ConnectButton(
         ConnectionStatus.CONNECTING -> connectingStr
         ConnectionStatus.CONNECTED -> stopStr
     }
-    val labelColor = when (status) {
-        ConnectionStatus.CONNECTED -> WhiteDnsPalette.WarningText
-        ConnectionStatus.DISCONNECTED -> if (enabled) WhiteDnsPalette.Accent else WhiteDnsPalette.Disabled
-        else -> WhiteDnsPalette.AccentPressed
+    val contentDescription = when (status) {
+        ConnectionStatus.DISCONNECTED -> WhiteDnsL10n.cdConnectButtonDisconnected
+        ConnectionStatus.CONNECTING -> WhiteDnsL10n.cdConnectButtonConnecting
+        ConnectionStatus.CONNECTED -> WhiteDnsL10n.cdConnectButtonConnected
     }
+    val cardShape = RoundedCornerShape(WhiteDnsRadii.card)
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = cardHeight)
+            .clip(cardShape)
+            .background(if (enabled) WhiteDnsPalette.Surface else WhiteDnsPalette.SurfaceAlt)
+            .border(1.dp, borderColor, cardShape)
+            .clickable(enabled = enabled, role = Role.Button) {
+                haptic.performMedium()
+                onClick()
+            }
+            .semantics(mergeDescendants = true) {
+                role = Role.Button
+                this.contentDescription = contentDescription
+            }
+            .padding(
+                horizontal = WhiteDnsSpacing.xl,
+                vertical = WhiteDnsSpacing.lg,
+            ),
+        horizontalArrangement = Arrangement.spacedBy(WhiteDnsSpacing.xxl),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            modifier = Modifier
-                .size(outerRingSize)
-                .scale(buttonScale),
-            contentAlignment = Alignment.Center,
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.Center,
         ) {
-            Canvas(modifier = Modifier.size(outerRingSize)) {
-                val strokeWidth = 3.dp.toPx()
-                val radius = (size.minDimension - strokeWidth) / 2f
-                val color = if (status == ConnectionStatus.CONNECTING) {
-                    accentColor.copy(alpha = pulseAlpha)
-                } else {
-                    ringColor.copy(alpha = if (status == ConnectionStatus.CONNECTED) 0.30f else 0.15f)
-                }
-                drawCircle(
-                    color = color,
-                    radius = radius,
-                    style = Stroke(width = strokeWidth),
-                )
-            }
-
-            Canvas(modifier = Modifier.size(circleSize + 14.dp)) {
-                val strokeWidth = 5.dp.toPx()
-                val arcSize = Size(
-                    width = size.width - strokeWidth,
-                    height = size.height - strokeWidth,
-                )
-                val topLeft = Offset(strokeWidth / 2f, strokeWidth / 2f)
-
-                when (status) {
-                    ConnectionStatus.CONNECTING -> {
-                        drawArc(
-                            color = borderColor.copy(alpha = 0.65f),
-                            startAngle = -90f,
-                            sweepAngle = 360f,
-                            useCenter = false,
-                            topLeft = topLeft,
-                            size = arcSize,
-                            style = Stroke(width = strokeWidth),
-                        )
-                        drawArc(
-                            color = accentColor,
-                            startAngle = -90f,
-                            sweepAngle = 360f * progressFraction,
-                            useCenter = false,
-                            topLeft = topLeft,
-                            size = arcSize,
-                            style = Stroke(
-                                width = strokeWidth,
-                                cap = StrokeCap.Round,
-                            ),
-                        )
-                        rotate(spinAngle) {
-                            drawArc(
-                                color = accentColor.copy(alpha = 0.22f),
-                                startAngle = 0f,
-                                sweepAngle = 42f,
-                                useCenter = false,
-                                topLeft = topLeft,
-                                size = arcSize,
-                                style = Stroke(
-                                    width = strokeWidth,
-                                    cap = StrokeCap.Round,
-                                ),
-                            )
-                        }
-                    }
-                    ConnectionStatus.CONNECTED -> {
-                        drawArc(
-                            color = successColor,
-                            startAngle = -90f,
-                            sweepAngle = 360f,
-                            useCenter = false,
-                            topLeft = topLeft,
-                            size = arcSize,
-                            style = Stroke(
-                                width = strokeWidth,
-                                cap = StrokeCap.Round,
-                            ),
-                        )
-                    }
-                    ConnectionStatus.DISCONNECTED -> Unit
-                }
-            }
-
-            Box(
-                modifier = Modifier
-                    .size(circleSize)
-                    .clip(CircleShape)
-                    .background(if (enabled) WhiteDnsPalette.Surface else WhiteDnsPalette.SurfaceAlt)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClick = {
-                            haptic.performMedium()
-                            onClick()
-                        },
-                    )
-                    .semantics(mergeDescendants = true) { role = Role.Button },
-                contentAlignment = Alignment.Center,
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center,
+            Text(
+                text = label,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (enabled) WhiteDnsPalette.Ink else WhiteDnsPalette.Disabled,
+                ),
+            )
+            if (status == ConnectionStatus.CONNECTING) {
+                Spacer(modifier = Modifier.height(WhiteDnsSpacing.sm))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(WhiteDnsSpacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Icon(
-                        imageVector = if (status == ConnectionStatus.CONNECTED) {
-                            Icons.Rounded.Stop
-                        } else {
-                            Icons.Rounded.PowerSettingsNew
-                        },
-                        contentDescription = when (status) {
-                            ConnectionStatus.DISCONNECTED -> WhiteDnsL10n.cdConnectButtonDisconnected
-                            ConnectionStatus.CONNECTING -> WhiteDnsL10n.cdConnectButtonConnecting
-                            ConnectionStatus.CONNECTED -> WhiteDnsL10n.cdConnectButtonConnected
-                        },
-                        tint = iconColor,
-                        modifier = Modifier.size(if (status == ConnectionStatus.CONNECTED) 30.dp else 34.dp),
-                    )
-                    Spacer(modifier = Modifier.height(WhiteDnsSpacing.iconSpacing))
                     Text(
-                        text = label,
+                        text = progressState.label,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 11.sp,
+                            fontSize = 12.sp,
                             fontWeight = FontWeight.Medium,
-                            color = labelColor,
+                            color = WhiteDnsPalette.Muted,
                         ),
                     )
-                    if (status == ConnectionStatus.CONNECTING) {
-                        Spacer(modifier = Modifier.height(WhiteDnsSpacing.xs))
-                        Text(
-                            text = progressState.label,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = WhiteDnsPalette.Muted,
-                            ),
-                        )
-                        Spacer(modifier = Modifier.height(WhiteDnsSpacing.xs))
-                        Text(
-                            text = "${progressState.percent.coerceIn(0, 99)}%",
-                            maxLines = 1,
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = WhiteDnsPalette.Accent,
-                            ),
-                        )
-                    }
+                    Text(
+                        text = "${progressState.percent.coerceIn(0, 99)}%",
+                        maxLines = 1,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = WhiteDnsPalette.AccentText,
+                        ),
+                    )
                 }
             }
+        }
+        Box(
+            modifier = Modifier
+                .size(actionSize)
+                .clip(CircleShape)
+                .background(actionBackgroundColor),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (status == ConnectionStatus.CONNECTING) {
+                CircularProgressIndicator(
+                    progress = { progressFraction },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(WhiteDnsSpacing.xs),
+                    color = WhiteDnsPalette.OnAccent,
+                    strokeWidth = 3.dp,
+                )
+            }
+            Icon(
+                imageVector = if (status == ConnectionStatus.CONNECTED) {
+                    Icons.Rounded.Stop
+                } else {
+                    Icons.Rounded.PowerSettingsNew
+                },
+                contentDescription = null,
+                tint = actionIconColor,
+                modifier = Modifier.size(32.dp),
+            )
         }
     }
 }
@@ -7670,16 +7509,16 @@ private fun ResolverRuntimeSummary(
         }
         AnimatedVisibility(
             visible = backgroundMtuScanInProgress,
-            enter = fadeIn(animationSpec = tween(180)) + expandVertically(animationSpec = tween(180)),
-            exit = fadeOut(animationSpec = tween(120)) + shrinkVertically(animationSpec = tween(120)),
+            enter = fadeIn(animationSpec = tween(180)),
+            exit = fadeOut(animationSpec = tween(120)),
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(WhiteDnsRadii.control))
                     .background(WhiteDnsPalette.AccentSurface)
-                    .border(1.5.dp, WhiteDnsPalette.Accent.copy(alpha = 0.20f), RoundedCornerShape(10.dp))
-                    .padding(horizontal = 12.dp, vertical = 9.dp),
+                    .border(1.dp, WhiteDnsPalette.Accent.copy(alpha = 0.20f), RoundedCornerShape(WhiteDnsRadii.control))
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -7695,15 +7534,6 @@ private fun ResolverRuntimeSummary(
                             modifier = Modifier.size(20.dp),
                             color = WhiteDnsPalette.Accent,
                             strokeWidth = 2.5.dp,
-                        )
-                        // Show percentage inside circle
-                        Text(
-                            text = "${(progressState.completed * 100 / progressState.total)}%",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 7.sp,
-                                color = WhiteDnsPalette.Accent,
-                                fontWeight = FontWeight.Bold
-                            )
                         )
                     } else {
                         // Indeterminate progress when total is unknown
@@ -7723,7 +7553,7 @@ private fun ResolverRuntimeSummary(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 11.sp,
+                        fontSize = 13.sp,
                         color = WhiteDnsPalette.AccentText,
                         fontWeight = FontWeight.Medium,
                     ),
@@ -7759,24 +7589,23 @@ private fun ResolverRuntimeValue(
     val context = LocalContext.current
     Column(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(WhiteDnsRadii.control))
             .background(WhiteDnsPalette.Surface)
-            .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(10.dp))
+            .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.control))
             .semantics {
                 contentDescription = context.getString(R.string.cd_stat_card_detail, label, value)
             }
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 9.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
     ) {
         Text(
             text = label,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 9.sp,
+                fontSize = 12.sp,
                 color = WhiteDnsPalette.Muted,
                 fontWeight = FontWeight.Bold,
-                letterSpacing = 0.6.sp,
             ),
         )
         Spacer(modifier = Modifier.height(WhiteDnsSpacing.xs))
@@ -7827,10 +7656,10 @@ private fun ConnectionVerificationSummary(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(WhiteDnsRadii.control))
             .background(surface)
-            .border(1.5.dp, color.copy(alpha = 0.22f), RoundedCornerShape(10.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .border(1.dp, color.copy(alpha = 0.22f), RoundedCornerShape(WhiteDnsRadii.control))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -7853,10 +7682,9 @@ private fun ConnectionVerificationSummary(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     color = color,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 0.7.sp,
                 ),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.xs))
@@ -7865,8 +7693,8 @@ private fun ConnectionVerificationSummary(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 10.sp,
-                    lineHeight = 14.sp,
+                    fontSize = 12.sp,
+                    lineHeight = 18.sp,
                     color = WhiteDnsPalette.Description,
                     fontWeight = FontWeight.Medium,
                 ),
@@ -7917,10 +7745,10 @@ private fun ResolverRuntimeDialog(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
+                .clip(RoundedCornerShape(WhiteDnsRadii.dialog))
                 .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(22.dp))
-                .padding(18.dp),
+                .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.dialog))
+                .padding(16.dp),
         ) {
             Text(
                 text = title,
@@ -7928,7 +7756,6 @@ private fun ResolverRuntimeDialog(
                     fontSize = 14.sp,
                     color = WhiteDnsPalette.Ink,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.1.sp,
                 ),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.md))
@@ -7979,9 +7806,9 @@ private fun LiveSpeedStrip(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(WhiteDnsRadii.card))
             .background(WhiteDnsPalette.Surface)
-            .border(2.dp, WhiteDnsPalette.Border, RoundedCornerShape(18.dp))
+            .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(WhiteDnsRadii.card))
             .padding(8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -8170,9 +7997,9 @@ private fun SpeedIndicator(
         modifier = modifier
             .clip(RoundedCornerShape(13.dp))
             .background(WhiteDnsPalette.SuccessSurface)
-            .padding(horizontal = 8.dp, vertical = 9.dp),
+            .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Icon(
             imageVector = icon,
@@ -8188,8 +8015,7 @@ private fun SpeedIndicator(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 8.sp,
-                    letterSpacing = 0.8.sp,
+                    fontSize = 12.sp,
                     color = WhiteDnsPalette.Muted,
                 ),
             )
@@ -8198,7 +8024,7 @@ private fun SpeedIndicator(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 11.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     color = WhiteDnsPalette.Ink,
                 ),
@@ -8307,7 +8133,7 @@ private fun AutoTuneResultsSection(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(1.5.dp)
+                    .height(1.dp)
                     .background(WhiteDnsPalette.Divider),
             )
             Spacer(modifier = Modifier.height(WhiteDnsSpacing.sm))
@@ -8358,7 +8184,7 @@ private fun AutoTuneResultRow(
         Spacer(modifier = Modifier.height(WhiteDnsSpacing.sm))
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             AutoTuneMetricPill(
                 metric = autoTuneMtuMetric(result),
@@ -8400,8 +8226,8 @@ private fun AutoTuneResultRow(
             Text(
                 text = message,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 11.sp,
-                    lineHeight = 15.sp,
+                    fontSize = 13.sp,
+                    lineHeight = 19.sp,
                     color = if (result.status == "failed") WhiteDnsPalette.WarningText else WhiteDnsPalette.Muted,
                     fontWeight = if (result.status == "failed") FontWeight.Medium else FontWeight.Normal,
                 ),
@@ -8425,12 +8251,12 @@ private fun AutoTuneMetricPill(
 ) {
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(WhiteDnsRadii.control))
             .background(metric.surface)
-            .border(1.5.dp, metric.color.copy(alpha = 0.16f), RoundedCornerShape(10.dp))
-            .padding(horizontal = 7.dp, vertical = 7.dp),
+            .border(1.dp, metric.color.copy(alpha = 0.16f), RoundedCornerShape(WhiteDnsRadii.control))
+            .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         if (metric.loading) {
             CircularProgressIndicator(
@@ -8452,8 +8278,7 @@ private fun AutoTuneMetricPill(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 7.sp,
-                    letterSpacing = 0.5.sp,
+                    fontSize = 12.sp,
                     color = WhiteDnsPalette.Muted,
                 ),
             )
@@ -8462,7 +8287,7 @@ private fun AutoTuneMetricPill(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 10.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Medium,
                     color = WhiteDnsPalette.Ink,
                 ),
@@ -8566,7 +8391,7 @@ private fun CompactMetricRow(
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         metrics.forEach { metric ->
             CompactMetricPill(
@@ -8584,12 +8409,12 @@ private fun CompactMetricPill(
 ) {
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(WhiteDnsRadii.control))
             .background(WhiteDnsPalette.SuccessSurface)
-            .border(1.5.dp, WhiteDnsPalette.Success.copy(alpha = 0.16f), RoundedCornerShape(10.dp))
+            .border(1.dp, WhiteDnsPalette.Success.copy(alpha = 0.16f), RoundedCornerShape(WhiteDnsRadii.control))
             .padding(horizontal = 8.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Icon(
             imageVector = metric.icon,
@@ -8605,8 +8430,7 @@ private fun CompactMetricPill(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 8.sp,
-                    letterSpacing = 0.6.sp,
+                    fontSize = 12.sp,
                     color = WhiteDnsPalette.Muted,
                 ),
             )
@@ -8615,7 +8439,7 @@ private fun CompactMetricPill(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 11.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     color = WhiteDnsPalette.Ink,
                 ),
@@ -8632,7 +8456,7 @@ private fun ProtocolRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 9.dp),
+            .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -8647,8 +8471,8 @@ private fun ProtocolRow(
             modifier = Modifier
                 .clip(RoundedCornerShape(5.dp))
                 .background(WhiteDnsPalette.AccentSurface)
-                .border(1.5.dp, WhiteDnsPalette.Accent.copy(alpha = 0.15f), RoundedCornerShape(5.dp))
-                .padding(horizontal = 10.dp, vertical = 3.dp),
+                .border(1.dp, WhiteDnsPalette.Accent.copy(alpha = 0.15f), RoundedCornerShape(5.dp))
+                .padding(horizontal = 8.dp, vertical = 4.dp),
         ) {
             Text(
                 text = protocol,
@@ -8664,7 +8488,7 @@ private fun ProtocolRow(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(1.5.dp)
+                .height(1.dp)
                 .background(WhiteDnsPalette.Divider),
         )
     }
@@ -8677,17 +8501,12 @@ private fun InfoCard(
     titleAction: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape = RoundedCornerShape(if (compact) 12.dp else 14.dp)
-    val borderWidth = if (compact) 2.dp else 2.5.dp
-    val contentPadding = if (compact) 14.dp else 18.dp
-    val titleBottomSpacing = if (compact) 9.dp else 14.dp
+    val contentPadding = if (compact) WhiteDnsSpacing.md else 0.dp
+    val titleBottomSpacing = if (compact) WhiteDnsSpacing.sm else WhiteDnsSpacing.md
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(shape)
-            .background(WhiteDnsPalette.Surface)
-            .border(borderWidth, WhiteDnsPalette.Border, shape)
             .padding(contentPadding),
     ) {
         Row(
@@ -8701,10 +8520,9 @@ private fun InfoCard(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = if (compact) 12.sp else 13.sp,
-                    color = WhiteDnsPalette.SectionTitle,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.6.sp,
+                    fontSize = if (compact) 13.sp else 15.sp,
+                    color = WhiteDnsPalette.Ink,
+                    fontWeight = FontWeight.SemiBold,
                 ),
             )
             titleAction?.invoke()
@@ -8724,7 +8542,7 @@ private fun InfoRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 9.dp),
+            .padding(vertical = 8.dp),
         horizontalArrangement = if (multilineValue) Arrangement.spacedBy(12.dp) else Arrangement.SpaceBetween,
         verticalAlignment = if (multilineValue) Alignment.Top else Alignment.CenterVertically,
     ) {
@@ -8752,7 +8570,7 @@ private fun InfoRow(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(1.5.dp)
+                .height(1.dp)
                 .background(WhiteDnsPalette.Divider),
         )
     }
@@ -8764,7 +8582,8 @@ private fun ConnectionLogsBlock(
     expanded: Boolean = false,
 ) {
     val logs = uiState.connectionLogs
-    val visibleLogs = if (expanded) logs else logs.take(10)
+    val meaningfulLogs = logs.filter { it.isNotBlank() && it != "Idle" }
+    val visibleLogs = if (expanded) meaningfulLogs else meaningfulLogs.take(10)
     val context = LocalContext.current
     val logsClipboardLabel = WhiteDnsL10n.whiteDnsLogsLabel
     val diagnosticsClipboardLabel = WhiteDnsL10n.whiteDnsDiagnosticsLabel
@@ -8773,34 +8592,39 @@ private fun ConnectionLogsBlock(
             .fillMaxWidth()
             .padding(bottom = 8.dp),
     ) {
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(WhiteDnsSpacing.sm),
         ) {
             Text(
                 text = WhiteDnsL10n.logsInlineTitle,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 10.sp,
+                style = MaterialTheme.typography.titleMedium.copy(
                     color = WhiteDnsPalette.SectionTitle,
-                    letterSpacing = 1.5.sp,
-                    fontWeight = FontWeight.Medium,
                 ),
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                LogActionButton(
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(WhiteDnsSpacing.sm),
+            ) {
+                CompactActionButton(
+                    modifier = Modifier.weight(1f),
                     label = WhiteDnsL10n.btnCopy,
+                    emphasized = false,
+                    enabled = meaningfulLogs.isNotEmpty(),
                     onClick = {
                         copyTextToClipboard(
                             context = context,
                             label = logsClipboardLabel,
-                            text = logs.joinToString(separator = "\n"),
+                            text = meaningfulLogs.joinToString(separator = "\n"),
                             sensitive = false,
                         )
                     },
                 )
-                LogActionButton(
+                CompactActionButton(
+                    modifier = Modifier.weight(1f),
                     label = WhiteDnsL10n.logsDiagnostics,
+                    emphasized = false,
+                    enabled = true,
                     onClick = {
                         copyTextToClipboard(
                             context = context,
@@ -8816,64 +8640,54 @@ private fun ConnectionLogsBlock(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(WhiteDnsPalette.Surface)
-                .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(12.dp)),
+                .heightIn(min = 240.dp)
+                .clip(RoundedCornerShape(WhiteDnsRadii.card))
+                .background(WhiteDnsPalette.SurfaceAlt),
         ) {
-            visibleLogs.forEachIndexed { index, logLine ->
-                Text(
-                    text = logLine,
+            if (visibleLogs.isEmpty()) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(if (index % 2 == 0) WhiteDnsPalette.SurfaceAlt else WhiteDnsPalette.Surface)
-                        .padding(horizontal = 12.dp, vertical = 9.dp),
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontSize = 10.sp,
-                        lineHeight = 15.sp,
-                        color = WhiteDnsPalette.Description,
-                    ),
-                )
-                if (index != visibleLogs.lastIndex) {
-                    Box(
+                        .heightIn(min = 240.dp)
+                        .padding(WhiteDnsSpacing.xxl),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Rounded.Link,
+                        contentDescription = null,
+                        tint = WhiteDnsPalette.AccentText,
+                        modifier = Modifier.size(28.dp),
+                    )
+                    Spacer(modifier = Modifier.height(WhiteDnsSpacing.md))
+                    Text(
+                        text = WhiteDnsL10n.logsEmptyTitle,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            color = WhiteDnsPalette.Ink,
+                        ),
+                    )
+                    Spacer(modifier = Modifier.height(WhiteDnsSpacing.xs))
+                    Text(
+                        text = WhiteDnsL10n.logsEmptyBody,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            color = WhiteDnsPalette.Description,
+                        ),
+                    )
+                }
+            } else {
+                visibleLogs.forEach { logLine ->
+                    Text(
+                        text = logLine,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(1.dp)
-                            .background(WhiteDnsPalette.Divider),
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = WhiteDnsPalette.Description,
+                        ),
                     )
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun LogActionButton(
-    label: String,
-    onClick: () -> Unit,
-) {
-    val haptic = rememberHapticFeedback()
-
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(WhiteDnsPalette.Surface)
-            .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(8.dp))
-            .semantics { contentDescription = label }
-            .clickable(role = Role.Button) {
-                haptic.performLight()
-                onClick()
-            }
-            .padding(horizontal = 10.dp, vertical = 5.dp),
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 9.sp,
-                color = WhiteDnsPalette.AccentText,
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 1.sp,
-            ),
-        )
     }
 }
 
@@ -9257,39 +9071,33 @@ private fun ResolverActionButton(
     val haptic = rememberHapticFeedback()
     val background = when {
         !enabled -> WhiteDnsPalette.SurfaceAlt
-        emphasized -> WhiteDnsPalette.Accent
+        emphasized -> WhiteDnsPalette.AccentSurface
         else -> WhiteDnsPalette.SurfaceAlt
-    }
-    val border = when {
-        !enabled -> WhiteDnsPalette.Divider
-        emphasized -> WhiteDnsPalette.AccentPressed
-        else -> WhiteDnsPalette.Border
     }
     val textColor = when {
         !enabled -> WhiteDnsPalette.Disabled
-        emphasized -> WhiteDnsPalette.OnAccent
+        emphasized -> WhiteDnsPalette.AccentText
         else -> WhiteDnsPalette.Muted
     }
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
+            .heightIn(min = WhiteDnsLayout.controlHeight)
+            .clip(RoundedCornerShape(WhiteDnsRadii.control))
             .background(background)
-            .border(1.5.dp, border, RoundedCornerShape(10.dp))
             .clickable(enabled = enabled, role = Role.Button) {
                 haptic.performLight()
                 onClick()
             }
-            .padding(horizontal = 10.dp, vertical = 9.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = label,
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 9.sp,
+                fontSize = 12.sp,
                 color = textColor,
                 fontWeight = FontWeight.Medium,
-                letterSpacing = 1.sp,
             ),
         )
     }
@@ -9313,24 +9121,6 @@ private fun SectionCard(
         animationSpec = tween(260, easing = FastOutSlowInEasing),
         label = "sectionRotation",
     )
-    val borderColor by animateColorAsState(
-        targetValue = if (isOpen) {
-            WhiteDnsPalette.Accent.copy(alpha = 0.26f)
-        } else {
-            WhiteDnsPalette.Border
-        },
-        animationSpec = tween(220),
-        label = "sectionBorderColor",
-    )
-    val iconBackground by animateColorAsState(
-        targetValue = if (isOpen) {
-            WhiteDnsPalette.AccentSurface
-        } else {
-            WhiteDnsPalette.SurfaceAlt
-        },
-        animationSpec = tween(220),
-        label = "sectionIconBackground",
-    )
     val iconColor by animateColorAsState(
         targetValue = if (isOpen) WhiteDnsPalette.AccentText else WhiteDnsPalette.Muted,
         animationSpec = tween(220),
@@ -9340,13 +9130,13 @@ private fun SectionCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
-            .background(WhiteDnsPalette.Surface)
-            .border(1.5.dp, borderColor, RoundedCornerShape(18.dp)),
+            .clip(RoundedCornerShape(WhiteDnsRadii.card))
+            .background(WhiteDnsPalette.Surface),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .heightIn(min = WhiteDnsLayout.navigationItemHeight)
                 .let { modifier ->
                     if (collapsible) {
                         modifier
@@ -9365,81 +9155,41 @@ private fun SectionCard(
                         modifier
                     }
                 }
-                .padding(horizontal = 14.dp, vertical = 13.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(WhiteDnsSpacing.sm),
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(iconBackground),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        imageVector = icon,
-                        contentDescription = if (collapsible) iconContentDescription else null,
-                        tint = iconColor,
-                        modifier = Modifier.size(17.dp),
-                    )
-                }
-                Column {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            color = WhiteDnsPalette.Ink,
-                            letterSpacing = 0.6.sp,
-                        ),
-                    )
-                    if (collapsible) {
-                        Text(
-                            text = if (expanded) WhiteDnsL10n.tapToCollapse else WhiteDnsL10n.tapToConfigure,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 9.sp,
-                                color = WhiteDnsPalette.Description,
-                                fontWeight = FontWeight.Medium,
-                                letterSpacing = 1.1.sp,
-                            ),
-                        )
-                    }
-                }
+                Icon(
+                    imageVector = icon,
+                    contentDescription = if (collapsible) iconContentDescription else null,
+                    tint = iconColor,
+                    modifier = Modifier.size(19.dp),
+                )
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        color = WhiteDnsPalette.Ink,
+                    ),
+                )
             }
             if (collapsible) {
-                Row(
+                Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(
-                            if (expanded) {
-                                WhiteDnsPalette.Accent
-                            } else {
-                                WhiteDnsPalette.SurfaceAlt
-                            },
-                        )
-                        .padding(start = 10.dp, end = 8.dp, top = 6.dp, bottom = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        .size(WhiteDnsLayout.minimumTouchTarget),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = if (expanded) WhiteDnsL10n.parallelTestOpen else WhiteDnsL10n.parallelTestClosed,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontSize = 9.sp,
-                            color = if (expanded) WhiteDnsPalette.OnAccent else WhiteDnsPalette.Muted,
-                            fontWeight = FontWeight.Medium,
-                            letterSpacing = 0.8.sp,
-                        ),
-                    )
                     Icon(
                         imageVector = Icons.Rounded.KeyboardArrowDown,
                         contentDescription = stringResource(
                             if (expanded) R.string.cd_advanced_settings_collapse else R.string.cd_advanced_settings_expand
                         ),
-                        tint = if (expanded) WhiteDnsPalette.OnAccent else WhiteDnsPalette.Muted,
+                        tint = if (expanded) WhiteDnsPalette.AccentText else WhiteDnsPalette.Muted,
                         modifier = Modifier
-                            .size(16.dp)
+                            .size(22.dp)
                             .graphicsLayer(rotationZ = rotation),
                     )
                 }
@@ -9448,13 +9198,13 @@ private fun SectionCard(
 
         AnimatedVisibility(
             visible = isOpen,
-            enter = fadeIn(animationSpec = tween(240)) + expandVertically(animationSpec = tween(240)),
-            exit = fadeOut(animationSpec = tween(180)) + shrinkVertically(animationSpec = tween(180)),
+            enter = fadeIn(animationSpec = tween(WhiteDnsAnimations.DURATION_FAST)),
+            exit = fadeOut(animationSpec = tween(WhiteDnsAnimations.DURATION_INSTANT)),
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(WhiteDnsPalette.Surface)
+                    .background(WhiteDnsPalette.SurfaceAlt)
                     .padding(horizontal = 16.dp, vertical = 16.dp),
             ) {
                 content()
@@ -9466,12 +9216,11 @@ private fun SectionCard(
 @Composable
 private fun GroupLabel(text: String) {
     Text(
-        text = text.uppercase(),
+        text = text,
         style = MaterialTheme.typography.bodyMedium.copy(
             fontSize = 12.sp,
             color = WhiteDnsPalette.SectionTitle,
             fontWeight = FontWeight.Bold,
-            letterSpacing = 1.8.sp,
         ),
     )
     Spacer(modifier = Modifier.height(WhiteDnsSpacing.sm))
@@ -9511,7 +9260,7 @@ private fun ToggleRow(
                     onToggle()
                 },
             )
-            .padding(vertical = 10.dp),
+            .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -9557,7 +9306,7 @@ private fun WhiteDnsTextField(
 ) {
     var focused by remember { mutableStateOf(false) }
     val borderColor = if (focused) WhiteDnsPalette.Accent.copy(alpha = 0.60f) else WhiteDnsPalette.Divider
-    val shape = RoundedCornerShape(10.dp)
+    val shape = RoundedCornerShape(WhiteDnsRadii.control)
     val textStyle = MaterialTheme.typography.bodyMedium.copy(
         color = WhiteDnsPalette.Ink,
         fontSize = 14.sp,
@@ -9593,10 +9342,15 @@ private fun WhiteDnsTextField(
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .heightIn(min = WhiteDnsLayout.controlHeight)
                             .clip(shape)
                             .background(WhiteDnsPalette.Input)
-                            .border(2.5.dp, borderColor, shape)
-                            .padding(horizontal = 12.dp, vertical = 11.dp),
+                            .border(1.dp, borderColor, shape)
+                            .padding(
+                                horizontal = 12.dp,
+                                vertical = if (singleLine) 0.dp else 12.dp,
+                            ),
+                        contentAlignment = if (singleLine) Alignment.CenterStart else Alignment.TopStart,
                     ) {
                         if (value.isEmpty()) {
                             Text(
@@ -9627,7 +9381,6 @@ private fun FieldLabel(text: String) {
             fontSize = 13.sp,
             color = WhiteDnsPalette.FieldLabel,
             fontWeight = FontWeight.SemiBold,
-            letterSpacing = 0.9.sp,
         ),
     )
     Spacer(modifier = Modifier.height(WhiteDnsSpacing.xs))
@@ -9713,7 +9466,7 @@ private fun CottenDnsBackgroundScanSlider(
         Text(
             text = WhiteDnsL10n.profileScanParallelismNote,
             style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 color = WhiteDnsPalette.Muted,
             ),
         )
@@ -9727,15 +9480,14 @@ private fun CottenDnsBackgroundScanSlider(
 @Composable
 private fun CottenDnsPresetSummaryPanel(settings: CottenDnsProfileSettings) {
     val summary = remember(settings) { CottenDnsSettingsRenderer.summarize(settings) }
-    Spacer(modifier = Modifier.height(WhiteDnsSpacing.sm))
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(WhiteDnsPalette.SurfaceAlt)
-            .border(1.5.dp, WhiteDnsPalette.Border, RoundedCornerShape(12.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(7.dp),
+            .border(1.dp, WhiteDnsPalette.Border, RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         CottenDnsFeatureLine(WhiteDnsL10n.profileFieldTransportMode, summary.transport)
         CottenDnsFeatureLine(WhiteDnsL10n.profileFieldDeliveryMode, summary.delivery)
@@ -9748,14 +9500,14 @@ private fun CottenDnsPresetSummaryPanel(settings: CottenDnsProfileSettings) {
 private fun CottenDnsFeatureLine(label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Top,
     ) {
         Text(
             text = label,
             modifier = Modifier.width(74.dp),
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 10.sp,
+                fontSize = 12.sp,
                 color = WhiteDnsPalette.Muted,
                 fontWeight = FontWeight.Medium,
             ),
@@ -9764,8 +9516,8 @@ private fun CottenDnsFeatureLine(label: String, value: String) {
             text = value,
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontSize = 10.sp,
-                lineHeight = 14.sp,
+                fontSize = 12.sp,
+                lineHeight = 18.sp,
                 color = WhiteDnsPalette.Description,
             ),
         )
@@ -9833,7 +9585,6 @@ private fun <T> WhiteDnsDropdownField(
     val selectedLabel = options.firstOrNull { it.value == value }?.label.orEmpty()
     val shape = RoundedCornerShape(if (compact) 10.dp else 12.dp)
     val horizontalPadding = if (compact) 10.dp else 12.dp
-    val verticalPadding = if (compact) 8.dp else 10.dp
     val borderColor by animateColorAsState(
         targetValue = if (!enabled) {
             WhiteDnsPalette.Divider
@@ -9866,14 +9617,15 @@ private fun <T> WhiteDnsDropdownField(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(min = WhiteDnsLayout.controlHeight)
                     .clip(shape)
                     .background(backgroundColor)
-                    .border(1.5.dp, borderColor, shape)
+                    .border(1.dp, borderColor, shape)
                     .clickable(enabled = enabled, role = Role.Button) {
                         haptic.performLight()
                         expanded = true
                     }
-                    .padding(horizontal = horizontalPadding, vertical = verticalPadding),
+                    .padding(horizontal = horizontalPadding),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -9905,15 +9657,15 @@ private fun <T> WhiteDnsDropdownField(
                 expanded = expanded && enabled,
                 onDismissRequest = { expanded = false },
                 modifier = Modifier
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(WhiteDnsRadii.card))
                     .background(WhiteDnsPalette.DropdownSurface),
             ) {
                 options.forEach { choice ->
                     val selected = choice.value == value
                     DropdownMenuItem(
                         modifier = Modifier
-                            .padding(horizontal = 6.dp, vertical = 2.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                            .clip(RoundedCornerShape(WhiteDnsRadii.control))
                             .background(
                                 if (selected) {
                                     WhiteDnsPalette.AccentSurface

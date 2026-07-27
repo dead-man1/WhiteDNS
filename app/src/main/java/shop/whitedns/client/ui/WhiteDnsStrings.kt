@@ -125,6 +125,8 @@ interface WhiteDnsStrings {
     val logsTitle: String
     val logsClear: String
     val logsCopy: String
+    val logsEmptyTitle: String
+    val logsEmptyBody: String
 
     // Scan tab
     val scanBtnStart: String
@@ -854,6 +856,8 @@ object EnglishStrings : WhiteDnsStrings {
     override val logsTitle = "CONNECTION LOGS"
     override val logsClear = "CLEAR"
     override val logsCopy = "COPY"
+    override val logsEmptyTitle = "No connection activity yet"
+    override val logsEmptyBody = "Connect WhiteDNS to see runtime events here. Diagnostics are available at any time."
 
     override val scanBtnStart = "START"
     override val scanBtnStop = "STOP"
@@ -1557,6 +1561,8 @@ object PersianStrings : WhiteDnsStrings {
     override val logsTitle = "لاگ‌های اتصال"
     override val logsClear = "پاک کردن"
     override val logsCopy = "کپی"
+    override val logsEmptyTitle = "هنوز فعالیت اتصالی ثبت نشده"
+    override val logsEmptyBody = "برای مشاهده رویدادهای اجرا، WhiteDNS را متصل کنید. تشخیص در هر زمان در دسترس است."
 
     override val scanBtnStart = "شروع"
     override val scanBtnStop = "توقف"

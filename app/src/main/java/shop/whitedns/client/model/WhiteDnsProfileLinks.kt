@@ -36,7 +36,7 @@ fun WhiteDnsSettings.exportStormDnsProfileLink(profile: ConnectionProfile = sele
         .put("version", StormDnsProfileVersion)
         .put("profile", profileJson)
 
-    return "$StormDnsProfileScheme://${encodeProfilePayload(root)}"
+    return "${DnsClientEngine.normalize(normalizedProfile.engine)}://${encodeProfilePayload(root)}"
 }
 
 fun WhiteDnsSettings.exportAllStormDnsProfileLinks(): String {

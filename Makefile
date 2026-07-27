@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 
-SDK_ROOT ?= $(HOME)/Library/Android/sdk
+SDK_ROOT ?= $(if $(ANDROID_HOME),$(ANDROID_HOME),$(HOME)/Library/Android/sdk)
+export ANDROID_HOME := $(SDK_ROOT)
 NDK_VERSION ?= 29.0.14206865
 NDK_ROOT ?= $(SDK_ROOT)/ndk/$(NDK_VERSION)
 NDK_HOST ?= darwin-x86_64
